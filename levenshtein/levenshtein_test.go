@@ -82,3 +82,40 @@ func BenchmarkHistogram(b *testing.B) {
 		ComputeHistogram("informatica fmi unibuc")
 	}
 }
+
+func TestLowerBound(t *testing.T) {
+	var testCases = []struct {
+		source uint32
+		target uint32
+		distance int
+	}{
+		{1, 0, 1},
+		{2, 3, 1},
+		{4, 4, 0},
+		{123, 123, 0},
+		{4, 2, 1},
+		{4, 3, 2},
+	}
+	for _, testCase := range testCases {
+		distance := LowerBound(testCase.source, testCase.target, 1)
+		if distance != testCase.distance {
+			t.Log( "Difference between",
+				    testCase.source,
+					"and",
+					testCase.target,
+					"computed as",
+					distance,
+					", should be",
+					testCase.distance)
+			t.Error("Failed to compute proper Lower Bound")
+		}
+	}
+}
+
+func BenchmarkLowerBound(b *testing.B) {
+	hist1, hist2 := ComputeHistogram("informatica"), ComputeHistogram("fmi unibuc")
+	diff := 1 // diferenta intre cele doua siruri
+	for n := 0; n < b.N; n++ {
+		LowerBound(hist1, hist2, diff)
+	}
+}

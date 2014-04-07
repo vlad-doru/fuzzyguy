@@ -55,7 +55,16 @@ func Distance(source, target string) int {
 func ComputeHistogram(s string) uint32 {
 	var result uint32 = 0
 	for _, c := range s {
-		result ^= (1 << (uint(c) & HistogramMod))
+		result ^= (1 << (HistogramMod & uint(c)))
 	}
 	return result
+}
+
+/* This function computes the number of different bits in both histogram
+   and then adds length_diff to that difference then divides that by 2 */
+func LowerBound(histogram_source, histogram_target uint32, length_diff int) int {
+	diff := histogram_target ^ histogram_source
+	diff -= ((diff >> 1) & 0x55555555)
+	diff = (diff & 0x33333333) + ((diff >> 2) & 0x33333333)
+    return (int((((diff + (diff >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24) + length_diff) >> 1
 }
