@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/vlad-doru/fuzzyguy/levenshtein"
+	)
 
 func main() {
-	fmt.Println(len("da"))
+	fmt.Println(levenshtein.Distance("ana", "ama"))
 }
