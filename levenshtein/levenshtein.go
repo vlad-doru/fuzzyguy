@@ -1,5 +1,7 @@
 package levenshtein
 
+const HistogramMod = (1 << 5) - 1
+
 func NewMatrix(dx, dy int) [][]int {
 	m := make([][]int, dx)
 	for i, _ := range m {
@@ -48,4 +50,12 @@ func Distance(source, target string) int {
 	}
 
 	return dist[len(source)][len(target)]
+}
+
+func ComputeHistogram(s string) uint32 {
+	var result uint32 = 0
+	for _, c := range s {
+		result ^= (1 << (uint(c) & HistogramMod))
+	}
+	return result
 }
