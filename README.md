@@ -1,4 +1,4 @@
-fuzzyguy
+Fuzzy Guy
 ========
 
-Fast and scalable fuzzy searching service
+Fast and scalable fuzzy online searching service.
