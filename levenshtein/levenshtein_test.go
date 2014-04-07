@@ -53,7 +53,7 @@ func TestLevenshtein(t *testing.T) {
 
 func BenchmarkLevenshtein(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		Distance("informatica", "fmi unibuc")
+		Distance("informatica super", "fmi unibuc da")
 	}
 }
 
