@@ -21,6 +21,7 @@ var testCases = []struct {
 	{"a", "", 1},
 	{"aa", "a", 1},
 	{"aaa", "a", 2},
+	{"informatica", "fmi unibuc", 10},
 }
 
 
@@ -37,7 +38,7 @@ func TestNewMatrix(t *testing.T) {
 
 func TestLevenshtein(t *testing.T) {
 	for _, testCase := range testCases {
-		distance := LevenshteinDistance(testCase.source, testCase.target)
+		distance := Distance(testCase.source, testCase.target)
 		if distance != testCase.distance {
 			t.Log(
 					"Distance between",
@@ -50,5 +51,11 @@ func TestLevenshtein(t *testing.T) {
 					testCase.distance)
 			t.Error("Failed to compute proper Levenshtein Distance")
 		}
+	}
+}
+
+func BenchmarkLevenshtein(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		Distance("informatica", "fmi unibuc")
 	}
 }

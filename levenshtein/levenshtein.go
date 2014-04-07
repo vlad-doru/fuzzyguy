@@ -18,7 +18,7 @@ func Min(x, y, z int) int {
 	return z
 }
 
-func LevenshteinDistance(source, target string) int {
+func Distance(source, target string) int {
 	if len(source) == 0 {
 		return len(target)
 	}
