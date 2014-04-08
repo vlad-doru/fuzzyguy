@@ -2,12 +2,12 @@ package levenshtein
 
 import (
 	"testing"
-	)
+)
 
 func TestNewMatrix(t *testing.T) {
-	m := NewMatrix(3, 4) 
-	for i := 0; i<3; i++ {
-		for j :=0; j<4; j++ {
+	m := NewMatrix(3, 4)
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 4; j++ {
 			if m[i][j] != 0 {
 				t.Error("Matrix was not initialized as it was supposed to")
 			}
@@ -17,8 +17,8 @@ func TestNewMatrix(t *testing.T) {
 
 func TestLevenshtein(t *testing.T) {
 	var testCases = []struct {
-		source string
-		target string
+		source   string
+		target   string
 		distance int
 	}{
 		{"", "a", 1},
@@ -38,14 +38,14 @@ func TestLevenshtein(t *testing.T) {
 	for _, testCase := range testCases {
 		distance := Distance(testCase.source, testCase.target)
 		if distance != testCase.distance {
-			t.Log( "Distance between",
-				    testCase.source,
-					"and",
-					testCase.target,
-					"computed as",
-					distance,
-					", should be",
-					testCase.distance)
+			t.Log("Distance between",
+				testCase.source,
+				"and",
+				testCase.target,
+				"computed as",
+				distance,
+				", should be",
+				testCase.distance)
 			t.Error("Failed to compute proper Levenshtein Distance")
 		}
 	}
@@ -58,11 +58,11 @@ func BenchmarkLevenshtein(b *testing.B) {
 }
 
 func TestHistogram(t *testing.T) {
-	var testCases = []string {"ana", "are", "incredibil", "inexplicabil", "extraveral"}
+	var testCases = []string{"ana", "are", "incredibil", "inexplicabil", "extraveral"}
 	for _, s := range testCases {
 		aux := make([]int, 32)
 		for _, c := range s {
-			aux[c % 32]++
+			aux[c%32]++
 		}
 		var true_value uint32 = 0
 		for i := 0; i < 32; i++ {
@@ -71,7 +71,7 @@ func TestHistogram(t *testing.T) {
 			}
 		}
 		if true_value != ComputeHistogram(s) {
-			t.Log( "Bad histogram for ", s)
+			t.Log("Bad histogram for ", s)
 			t.Error("Didn't compute the histogram properly")
 		}
 	}
@@ -85,8 +85,8 @@ func BenchmarkHistogram(b *testing.B) {
 
 func TestLowerBound(t *testing.T) {
 	var testCases = []struct {
-		source uint32
-		target uint32
+		source   uint32
+		target   uint32
 		distance int
 	}{
 		{1, 0, 1},
@@ -99,14 +99,14 @@ func TestLowerBound(t *testing.T) {
 	for _, testCase := range testCases {
 		distance := LowerBound(testCase.source, testCase.target, 1)
 		if distance != testCase.distance {
-			t.Log( "Difference between",
-				    testCase.source,
-					"and",
-					testCase.target,
-					"computed as",
-					distance,
-					", should be",
-					testCase.distance)
+			t.Log("Difference between",
+				testCase.source,
+				"and",
+				testCase.target,
+				"computed as",
+				distance,
+				", should be",
+				testCase.distance)
 			t.Error("Failed to compute proper Lower Bound")
 		}
 	}

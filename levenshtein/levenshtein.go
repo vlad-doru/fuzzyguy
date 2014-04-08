@@ -13,7 +13,7 @@ func NewMatrix(dx, dy int) [][]int {
 func Min(x, y, z int) int {
 	if x < y && x < z {
 		return x
-	} 
+	}
 	if y < z {
 		return y
 	}
@@ -29,21 +29,21 @@ func Distance(source, target string) int {
 		return source_len
 	}
 
-	v0, v1 := make([]int, target_len + 1), make([]int, target_len + 1)
-	
-	for i := 0; i<=target_len; i++ {
+	v0, v1 := make([]int, target_len+1), make([]int, target_len+1)
+
+	for i := 0; i <= target_len; i++ {
 		v0[i] = i
 	}
 
 	cost := 0
-	for i := 0; i<source_len; i++ {
+	for i := 0; i < source_len; i++ {
 		v1[0] = i + 1
 		for j := 0; j < target_len; j++ {
 			cost = 0
 			if source[i] != target[j] {
 				cost = 1
 			}
-			v1[j + 1] = Min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost)
+			v1[j+1] = Min(v1[j]+1, v0[j+1]+1, v0[j]+cost)
 		}
 		v0, v1 = v1, v0
 	}
@@ -65,5 +65,5 @@ func LowerBound(histogram_source, histogram_target uint32, length_diff int) int 
 	diff := histogram_target ^ histogram_source
 	diff -= ((diff >> 1) & 0x55555555)
 	diff = (diff & 0x33333333) + ((diff >> 2) & 0x33333333)
-    return (int((((diff + (diff >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24) + length_diff) >> 1
+	return (int((((diff+(diff>>4))&0x0F0F0F0F)*0x01010101)>>24) + length_diff) >> 1
 }
