@@ -52,8 +52,10 @@ func TestLevenshtein(t *testing.T) {
 }
 
 func BenchmarkLevenshtein(b *testing.B) {
+	source := "informatcia supre"
+	target := "informatica super"
 	for n := 0; n < b.N; n++ {
-		Distance("informatica super", "informatcia supre")
+		Distance(source, target)
 	}
 }
 
