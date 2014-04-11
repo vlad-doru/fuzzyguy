@@ -30,7 +30,7 @@ func TestLevenshtein(t *testing.T) {
 		{"aaa", "ab", 2},
 		{"a", "a", 0},
 		{"ab", "ab", 0},
-		{"a", "", 1},
+		{"ab", "", 2},
 		{"aa", "a", 1},
 		{"aaa", "a", 2},
 		{"informatica", "fmi unibuc", 10},
@@ -51,11 +51,78 @@ func TestLevenshtein(t *testing.T) {
 	}
 }
 
+func TestDistanceThreshold(t *testing.T) {
+	threshold := 2
+	var testCases = []struct {
+		source   string
+		target   string
+		distance int
+		within   bool
+	}{
+		{"", "aa", 2, true},
+		{"a", "aa", 1, true},
+		{"a", "aaa", 2, true},
+		{"", "", 0, true},
+		{"a", "bcaa", -1, false},
+		{"aaa", "aba", 1, true},
+		{"aaa", "abcd", -1, false},
+		{"a", "a", 0, true},
+		{"ab", "aabc", 2, true},
+		{"abc", "", -1, false},
+		{"aa", "a", 1, true},
+		{"aaaaa", "a", -1, false},
+		{"informatica", "fmi unibuc", -1, false},
+	}
+	for _, testCase := range testCases {
+		distance, within := DistanceThreshold(testCase.source, testCase.target, threshold)
+
+		if within != testCase.within {
+			t.Log("Distance between",
+				testCase.source,
+				"and",
+				testCase.target,
+				"computed as",
+				within,
+				", should be",
+				testCase.within)
+			t.Error("Failed to compute threshold properly")
+		}
+
+		if within && distance != testCase.distance {
+			t.Log("Distance between",
+				testCase.source,
+				"and",
+				testCase.target,
+				"computed as",
+				distance,
+				", should be",
+				testCase.distance)
+			t.Error("Failed to compute proper Levenshtein Distance")
+		}
+	}
+}
+
 func BenchmarkLevenshtein(b *testing.B) {
 	source := "informatcia supre"
 	target := "informatica super"
 	for n := 0; n < b.N; n++ {
 		Distance(source, target)
+	}
+}
+
+func BenchmarkLevenshteinThreshold(b *testing.B) {
+	source := "informatcia supre"
+	target := "informatica super"
+	for n := 0; n < b.N; n++ {
+		DistanceThreshold(source, target, 3)
+	}
+}
+
+func BenchmarkLevenshteinThresholdStop(b *testing.B) {
+	source := "informaticasapre"
+	target := "informatica super"
+	for n := 0; n < b.N; n++ {
+		DistanceThreshold(source, target, 3)
 	}
 }
 
