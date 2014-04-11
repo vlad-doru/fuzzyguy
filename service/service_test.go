@@ -1,7 +1,13 @@
 package service
 
 import (
+	"bufio"
 	"container/heap"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -86,5 +92,56 @@ func TestFuzzyService(t *testing.T) {
 	if result[1] != "super" {
 		t.Log("supre Query wrong")
 		t.Error("Failed the query action")
+	}
+}
+
+func BenchmarkServiceQuery(b *testing.B) {
+	b.StopTimer()
+	service := NewFuzzyService()
+	data_files := []string{"data/testset_300000.dat"}
+
+	var key string
+	var keys_nr, queries_nr int
+	var queries, correct []string
+
+	for _, value := range data_files {
+		fmt.Println(value)
+		file, err := os.Open(value)
+		if err != nil {
+			log.Fatal(err)
+		}
+		reader := bufio.NewReader(file)
+
+		l, _, _ := reader.ReadLine()
+		keys_nr, _ = strconv.Atoi(string(l))
+
+		for i := 0; i < keys_nr; i++ {
+			l, _, _ = reader.ReadLine()
+			key = string(l)
+			service.Add(key, "test")
+		}
+
+		l, _, _ = reader.ReadLine()
+		queries_nr, _ = strconv.Atoi(string(l))
+
+		queries = make([]string, queries_nr)
+		correct = make([]string, queries_nr)
+
+		for i := 0; i < queries_nr; i++ {
+			l, _, _ = reader.ReadLine()
+			split := strings.Split(string(l), "\t")
+			queries[i] = split[0]
+			correct[i] = split[1]
+		}
+	}
+
+	fmt.Println(service.Len())
+	fmt.Println(service.HistoNumber())
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		for _, query := range queries {
+			service.Query(query, 3, 5)
+		}
 	}
 }

@@ -49,7 +49,21 @@ func (service FuzzyService) Get(key string) (string, bool) {
 }
 
 func (service FuzzyService) Len() int {
-	return len(service.dictionary)
+	result := 0
+	for _, dict := range service.dictionary {
+		result += len(dict)
+	}
+	return result
+}
+
+func (service FuzzyService) HistoNumber() int {
+	hist_map := make(map[uint32]bool)
+	for _, dict := range service.dictionary {
+		for _, storage := range dict {
+			hist_map[storage.histogram] = true
+		}
+	}
+	return len(hist_map)
 }
 
 type KeyScore struct {

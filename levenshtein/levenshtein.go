@@ -61,6 +61,7 @@ func Distance(source, target string) int {
 
 func DistanceThreshold(source, target string, threshold int) (int, bool) {
 	source_len, target_len := len(source), len(target)
+
 	if source_len > target_len {
 		source, target = target, source
 		source_len, target_len = target_len, source_len
