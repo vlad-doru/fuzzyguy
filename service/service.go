@@ -1,7 +1,7 @@
 package service
 
 import (
-	//"container/heap"
+	"container/heap"
 	"github.com/vlad-doru/fuzzyguy/levenshtein"
 )
 
@@ -21,17 +21,31 @@ type FuzzyService struct {
 	dictionary map[int]map[string]Storage
 }
 
+func NewFuzzyService() FuzzyService {
+	dict := make(map[int]map[string]Storage)
+	return FuzzyService{dict}
+}
+
 func (service FuzzyService) Add(key, value string) {
-	service.dictionary[len(key)][key] = Storage{levenshtein.ComputeHistogram(key), value}
+	storage := Storage{levenshtein.ComputeHistogram(key), value}
+	bucket, present := service.dictionary[len(key)]
+	if present {
+		bucket[key] = storage
+	} else {
+		bucket = map[string]Storage{key: storage}
+		service.dictionary[len(key)] = bucket
+	}
 }
 
 func (service FuzzyService) Get(key string) (string, bool) {
-	storage, present := service.dictionary[len(key)][key]
+	bucket, present := service.dictionary[len(key)]
 	if present {
-		return storage.value, true
-	} else {
-		return "", false
+		_, present = bucket[key]
+		if present {
+			return bucket[key].value, true
+		}
 	}
+	return "", false
 }
 
 func (service FuzzyService) Len() int {
@@ -51,7 +65,7 @@ func (h KeyScoreHeap) Len() int {
 }
 
 func (h KeyScoreHeap) Less(i, j int) bool {
-	return h[j].score < h[i].score // this is the max-heap condition
+	return h[i].score > h[j].score // this is the max-heap condition
 }
 
 func (h KeyScoreHeap) Swap(i, j int) {
@@ -70,13 +84,39 @@ func (h *KeyScoreHeap) Pop() interface{} {
 	return x
 }
 
-func (service FuzzyService) Query(key string, distance, max_results int) []string {
-	heap := new(KeyScoreHeap)
-	// query_histogram := levenshtein.ComputeHistogram(key)
+func Abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
 
-	results := make([]string, max_results)
-	for i, result := range *heap {
-		results[i] = result.key
+func (service FuzzyService) Query(query string, threshold, max_results int) []string {
+	h := new(KeyScoreHeap)
+	heap.Init(h)
+	query_histogram := levenshtein.ComputeHistogram(query)
+	query_len := len(query)
+
+	for i := query_len - threshold; i < query_len+threshold+1; i++ {
+		diff := Abs(i - query_len)
+		for key, storage := range service.dictionary[i] {
+			if levenshtein.LowerBound(query_histogram, storage.histogram, diff) <= threshold {
+				distance, within := levenshtein.DistanceThreshold(query, key, threshold)
+				if within {
+					if distance <= threshold {
+						heap.Push(h, KeyScore{distance, key})
+						if h.Len() > max_results {
+							heap.Pop(h)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	results := make([]string, h.Len())
+	for i := 0; i < len(results); i++ {
+		results[i] = h.Pop().(KeyScore).key
 	}
 	return results
 }
