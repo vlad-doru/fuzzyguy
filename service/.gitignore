@@ -1,2 +1,3 @@
 data/
-query.prof
+*.prof
+*.mprof

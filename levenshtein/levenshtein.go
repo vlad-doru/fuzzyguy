@@ -34,10 +34,15 @@ func Min3(x, y, z int) int {
 	return z
 }
 
+// We make these global so that we avoid reallocation
+var v0, v1 = make([]int, 20), make([]int, 20)
+
 func Distance(source, target string) int {
 	source_len, target_len := len(source), len(target)
 
-	v0, v1 := make([]int, target_len+1), make([]int, target_len+1)
+	if len(v0) <= target_len {
+		v0, v1 = make([]int, target_len+1), make([]int, target_len+1)
+	}
 
 	for i := 0; i <= target_len; i++ {
 		v0[i] = i
@@ -66,19 +71,18 @@ func DistanceThreshold(source, target string, threshold int) (int, bool) {
 		source, target = target, source
 		source_len, target_len = target_len, source_len
 	}
-	if source_len == 0 {
-		return target_len, target_len <= threshold
-	}
 
 	diff := target_len - source_len
 
-	v0, v1 := make([]int, target_len+1), make([]int, target_len+1)
+	if len(v0) <= target_len {
+		v0, v1 = make([]int, target_len+1), make([]int, target_len+1)
+	}
 
 	for i := 0; i <= target_len; i++ {
 		v0[i] = i
 	}
 
-	cost := 0
+	cost, lower := 0, 0 // In the lower variable we will keep the possible lower bound at each step
 	for i := 0; i < source_len; i++ {
 		start, stop := Max(0, i-threshold), Min(target_len, i+diff+threshold)
 		if start == 0 {
@@ -90,18 +94,25 @@ func DistanceThreshold(source, target string, threshold int) (int, bool) {
 			}
 			v1[start] = Min(v0[start]+1, v0[start-1]+cost)
 		}
+		lower = v1[start]
 		for j := start; j < stop-1; j++ {
 			cost = 0
 			if source[i] != target[j] {
 				cost = 1
 			}
 			v1[j+1] = Min3(v1[j]+1, v0[j+1]+1, v0[j]+cost)
+			lower = Min(v1[j+1], lower)
 		}
 		cost = 0
 		if source[i] != target[stop-1] {
 			cost = 1
 		}
 		v1[stop] = Min(v1[stop-1]+1, v0[stop-1]+cost)
+		lower = Min(v1[stop], lower)
+		// If the lower bound is higher than the threshold we return false
+		if lower > threshold {
+			return -1, false
+		}
 		v0, v1 = v1, v0
 	}
 

@@ -14,36 +14,53 @@ type Service interface {
 }
 
 type Storage struct {
-	histogram uint32
-	value     string
+	key   string
+	value string
 }
 
 type FuzzyService struct {
-	dictionary map[int]map[string]Storage
+	dictionary map[int]map[uint32][]Storage
 }
 
 func NewFuzzyService() FuzzyService {
-	dict := make(map[int]map[string]Storage)
+	dict := make(map[int]map[uint32][]Storage)
 	return FuzzyService{dict}
 }
 
 func (service FuzzyService) Add(key, value string) {
-	storage := Storage{levenshtein.ComputeHistogram(key), value}
+	histogram := levenshtein.ComputeHistogram(key)
+	storage := Storage{key, value}
 	bucket, present := service.dictionary[len(key)]
 	if present {
-		bucket[key] = storage
-	} else {
-		bucket = map[string]Storage{key: storage}
-		service.dictionary[len(key)] = bucket
+		list, histogram_present := bucket[histogram]
+		if histogram_present {
+			for _, pair := range list {
+				if pair.key == key {
+					pair.value = value
+					return
+				}
+			}
+			bucket[histogram] = append(bucket[histogram], storage)
+			return
+		}
+		bucket[histogram] = []Storage{storage}
+		return
 	}
+	bucket = map[uint32][]Storage{histogram: []Storage{storage}}
+	service.dictionary[len(key)] = bucket
 }
 
 func (service FuzzyService) Get(key string) (string, bool) {
+	histogram := levenshtein.ComputeHistogram(key)
 	bucket, present := service.dictionary[len(key)]
 	if present {
-		_, present = bucket[key]
-		if present {
-			return bucket[key].value, true
+		list, histogram_present := bucket[histogram]
+		if histogram_present {
+			for _, pair := range list {
+				if pair.key == key {
+					return pair.value, true
+				}
+			}
 		}
 	}
 	return "", false
@@ -55,16 +72,6 @@ func (service FuzzyService) Len() int {
 		result += len(dict)
 	}
 	return result
-}
-
-func (service FuzzyService) HistoNumber() int {
-	hist_map := make(map[uint32]bool)
-	for _, dict := range service.dictionary {
-		for _, storage := range dict {
-			hist_map[storage.histogram] = true
-		}
-	}
-	return len(hist_map)
 }
 
 type KeyScore struct {
@@ -116,19 +123,20 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 
 	for i := query_len - threshold; i < query_len+threshold+1; i++ {
 		diff := Abs(i - query_len)
-		go func(dict map[string]Storage) {
-			for key, storage := range dict {
-				if levenshtein.LowerBound(query_histogram, storage.histogram, diff) <= threshold {
-					distance, within := levenshtein.DistanceThreshold(query, key, threshold)
+		go func(dict map[uint32][]Storage) {
+			for histogram, list := range dict {
+				if levenshtein.LowerBound(query_histogram, histogram, diff) > threshold {
+					continue
+				}
+				for _, pair := range list {
+					distance, within := levenshtein.DistanceThreshold(query, pair.key, threshold)
 					if within {
-						if distance <= threshold {
-							mutex.Lock()
-							heap.Push(h, KeyScore{distance, key})
-							if h.Len() > max_results {
-								heap.Pop(h)
-							}
-							mutex.Unlock()
+						mutex.Lock()
+						heap.Push(h, KeyScore{distance, pair.key})
+						if h.Len() > max_results {
+							heap.Pop(h)
 						}
+						mutex.Unlock()
 					}
 				}
 			}

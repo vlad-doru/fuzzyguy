@@ -138,7 +138,6 @@ func BenchmarkServiceQuery(b *testing.B) {
 	}
 
 	fmt.Println(service.Len())
-	fmt.Println(service.HistoNumber())
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
