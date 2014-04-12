@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -97,6 +98,7 @@ func TestFuzzyService(t *testing.T) {
 
 func BenchmarkServiceQuery(b *testing.B) {
 	b.StopTimer()
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	service := NewFuzzyService()
 	data_files := []string{"data/testset_300000.dat"}
 

@@ -3,6 +3,7 @@ package service
 import (
 	"container/heap"
 	"github.com/vlad-doru/fuzzyguy/levenshtein"
+	"sync"
 )
 
 type Service interface {
@@ -110,22 +111,32 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 	heap.Init(h)
 	query_histogram := levenshtein.ComputeHistogram(query)
 	query_len := len(query)
+	mutex := sync.RWMutex{}
+	sync_channel := make(chan int)
 
 	for i := query_len - threshold; i < query_len+threshold+1; i++ {
 		diff := Abs(i - query_len)
-		for key, storage := range service.dictionary[i] {
-			if levenshtein.LowerBound(query_histogram, storage.histogram, diff) <= threshold {
-				distance, within := levenshtein.DistanceThreshold(query, key, threshold)
-				if within {
-					if distance <= threshold {
-						heap.Push(h, KeyScore{distance, key})
-						if h.Len() > max_results {
-							heap.Pop(h)
+		go func(dict map[string]Storage) {
+			for key, storage := range dict {
+				if levenshtein.LowerBound(query_histogram, storage.histogram, diff) <= threshold {
+					distance, within := levenshtein.DistanceThreshold(query, key, threshold)
+					if within {
+						if distance <= threshold {
+							mutex.Lock()
+							heap.Push(h, KeyScore{distance, key})
+							if h.Len() > max_results {
+								heap.Pop(h)
+							}
+							mutex.Unlock()
 						}
 					}
 				}
 			}
-		}
+			sync_channel <- 1
+		}(service.dictionary[i])
+	}
+	for i := query_len - threshold; i < query_len+threshold+1; i++ {
+		<-sync_channel
 	}
 
 	results := make([]string, h.Len())
