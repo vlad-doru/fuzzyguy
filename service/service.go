@@ -2,6 +2,7 @@ package service
 
 import (
 	"container/heap"
+	"github.com/ryszard/goskiplist/skiplist"
 	"github.com/vlad-doru/fuzzyguy/levenshtein"
 	"sync"
 )
@@ -14,22 +15,25 @@ type Service interface {
 }
 
 type Storage struct {
-	key   string
-	value string
+	key      string
+	value    string
+	extended uint64
 }
 
 type FuzzyService struct {
 	dictionary map[int]map[uint32][]Storage
+	histograms map[int]skiplist.SkipList
 }
 
 func NewFuzzyService() FuzzyService {
 	dict := make(map[int]map[uint32][]Storage)
-	return FuzzyService{dict}
+	histo := make(map[int]skiplist.SkipList)
+	return FuzzyService{dict, histo}
 }
 
 func (service FuzzyService) Add(key, value string) {
 	histogram := levenshtein.ComputeHistogram(key)
-	storage := Storage{key, value}
+	storage := Storage{key, value, levenshtein.ComputeExtendedHistogram(key)}
 	bucket, present := service.dictionary[len(key)]
 	if present {
 		list, histogram_present := bucket[histogram]
@@ -117,6 +121,7 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 	h := new(KeyScoreHeap)
 	heap.Init(h)
 	query_histogram := levenshtein.ComputeHistogram(query)
+	query_extended := levenshtein.ComputeExtendedHistogram(query)
 	query_len := len(query)
 	mutex := sync.RWMutex{}
 	sync_channel := make(chan int)
@@ -129,6 +134,9 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 					continue
 				}
 				for _, pair := range list {
+					if levenshtein.ExtendedLowerBound(query_extended, pair.extended, diff) > threshold {
+						continue
+					}
 					distance, within := levenshtein.DistanceThreshold(query, pair.key, threshold)
 					if within {
 						mutex.Lock()

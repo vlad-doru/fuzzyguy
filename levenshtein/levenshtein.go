@@ -142,7 +142,8 @@ func LowerBound(histogram_source, histogram_target uint32, length_diff int) int 
    should only be used as a second filter since they are much slower than the pervious
    ones and also take up more memory */
 
-const BUCKET_BITS = 8
+const BUCKET_BITS = 4
+const BIT_MASK = (1 << BUCKET_BITS) - 1
 
 var buckets = make([]uint8, 64/BUCKET_BITS)
 
@@ -152,7 +153,7 @@ func ComputeExtendedHistogram(s string) uint64 {
 	}
 	for _, c := range s {
 		index := int(c) % len(buckets)
-		if buckets[index] != ((1 << BUCKET_BITS) - 1) {
+		if buckets[index] != BIT_MASK {
 			buckets[index]++
 		}
 	}
@@ -171,12 +172,13 @@ func Abs(x int) int {
 }
 
 func ExtendedLowerBound(histogram_source, histogram_target uint64, length_diff int) int {
-	bit_mask := (1 << BUCKET_BITS) - 1
 	result := length_diff
 	for i := 0; i < 64/BUCKET_BITS; i++ {
-		source_bucket := int(histogram_source>>uint(i*BUCKET_BITS)) & bit_mask
-		target_bucket := int(histogram_target>>uint(i*BUCKET_BITS)) & bit_mask
+		source_bucket := int(histogram_source) & BIT_MASK
+		target_bucket := int(histogram_target) & BIT_MASK
 		result += Abs(target_bucket - source_bucket)
+		histogram_source >>= BUCKET_BITS
+		histogram_target >>= BUCKET_BITS
 	}
 	return result >> 1
 }
