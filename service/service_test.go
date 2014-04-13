@@ -132,17 +132,25 @@ func BenchmarkServiceQuery(b *testing.B) {
 		for i := 0; i < queries_nr; i++ {
 			l, _, _ = reader.ReadLine()
 			split := strings.Split(string(l), "\t")
-			queries[i] = split[0]
-			correct[i] = split[1]
+			correct[i], queries[i] = split[0], split[1]
 		}
 	}
 
-	fmt.Println(service.Len())
+	var accuracy float32 = 0
+	var result []string
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		for _, query := range queries {
-			service.Query(query, 3, 5)
+		for qindex, query := range queries {
+			result = service.Query(query, 3, 5)
+			b.StopTimer()
+			for rindex, res := range result {
+				if res == correct[qindex] {
+					accuracy += float32(rindex+1) / float32(len(result))
+				}
+			}
+			b.StartTimer()
 		}
 	}
+	fmt.Printf("Accuracy of testset \t %f", accuracy/float32(len(queries)))
 }

@@ -34,15 +34,10 @@ func Min3(x, y, z int) int {
 	return z
 }
 
-// We make these global so that we avoid reallocation
-var v0, v1 = make([]int, 20), make([]int, 20)
-
 func Distance(source, target string) int {
 	source_len, target_len := len(source), len(target)
 
-	if len(v0) <= target_len {
-		v0, v1 = make([]int, target_len+1), make([]int, target_len+1)
-	}
+	v0, v1 := make([]int, target_len+1), make([]int, target_len+1)
 
 	for i := 0; i <= target_len; i++ {
 		v0[i] = i
@@ -74,9 +69,7 @@ func DistanceThreshold(source, target string, threshold int) (int, bool) {
 
 	diff := target_len - source_len
 
-	if len(v0) <= target_len {
-		v0, v1 = make([]int, target_len+1), make([]int, target_len+1)
-	}
+	v0, v1 := make([]int, target_len+1), make([]int, target_len+1)
 
 	for i := 0; i <= target_len; i++ {
 		v0[i] = i
@@ -142,12 +135,11 @@ func LowerBound(histogram_source, histogram_target uint32, length_diff int) int 
    should only be used as a second filter since they are much slower than the pervious
    ones and also take up more memory */
 
-const BUCKET_BITS = 4
+const BUCKET_BITS = 2
 const BIT_MASK = (1 << BUCKET_BITS) - 1
 
-var buckets = make([]uint8, 64/BUCKET_BITS)
-
 func ComputeExtendedHistogram(s string) uint64 {
+	buckets := make([]uint8, 64/BUCKET_BITS)
 	for i, _ := range buckets {
 		buckets[i] = 0
 	}
