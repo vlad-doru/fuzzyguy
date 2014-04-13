@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"github.com/ryszard/goskiplist/skiplist"
 	"github.com/vlad-doru/fuzzyguy/levenshtein"
+	"sort"
 	"sync"
 )
 
@@ -25,10 +26,10 @@ type FuzzyService struct {
 	keyList    map[int]*skiplist.Set
 }
 
-func NewFuzzyService() FuzzyService {
+func NewFuzzyService() *FuzzyService {
 	dict := make(map[int]map[uint32][]Storage)
 	histo := make(map[int]*skiplist.Set)
-	return FuzzyService{dict, histo}
+	return &FuzzyService{dict, histo}
 }
 
 func (service FuzzyService) Add(key, value string) {
@@ -94,6 +95,9 @@ func (h KeyScoreHeap) Len() int {
 }
 
 func (h KeyScoreHeap) Less(i, j int) bool {
+	if h[i].score == h[j].score {
+		return h[i].key < h[j].key
+	}
 	return h[i].score > h[j].score // this is the max-heap condition
 }
 
@@ -126,13 +130,15 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 	query_histogram := levenshtein.ComputeHistogram(query)
 	query_extended := levenshtein.ComputeExtendedHistogram(query)
 	query_len := len(query)
-	mutex := sync.RWMutex{}
+	heap_mutex := &sync.Mutex{}
 	sync_channel := make(chan int)
+	start := query_len - threshold
+	stop := query_len + threshold + 1
 
-	for i := query_len - threshold; i < query_len+threshold+1; i++ {
-		diff := Abs(i - query_len)
-		go func(dict map[uint32][]Storage) {
-			for histogram, list := range dict {
+	for i := start; i < stop; i++ {
+		go func(index int, mutex *sync.Mutex) {
+			diff := Abs(index - query_len)
+			for histogram, list := range service.dictionary[index] {
 				if levenshtein.LowerBound(query_histogram, histogram, diff) > threshold {
 					continue
 				}
@@ -152,12 +158,13 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 				}
 			}
 			sync_channel <- 1
-		}(service.dictionary[i])
+		}(i, heap_mutex)
 	}
-	for i := query_len - threshold; i < query_len+threshold+1; i++ {
+	for i := start; i < stop; i++ {
 		<-sync_channel
 	}
 
+	sort.Sort(h)
 	results := make([]string, h.Len())
 	for i := 0; i < len(results); i++ {
 		results[i] = h.Pop().(KeyScore).key
