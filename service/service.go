@@ -2,7 +2,6 @@ package service
 
 import (
 	"container/heap"
-	"github.com/ryszard/goskiplist/skiplist"
 	"github.com/vlad-doru/fuzzyguy/levenshtein"
 	"sort"
 	"sync"
@@ -23,13 +22,11 @@ type Storage struct {
 
 type FuzzyService struct {
 	dictionary map[int]map[uint32][]Storage
-	keyList    map[int]*skiplist.Set
 }
 
 func NewFuzzyService() *FuzzyService {
 	dict := make(map[int]map[uint32][]Storage)
-	histo := make(map[int]*skiplist.Set)
-	return &FuzzyService{dict, histo}
+	return &FuzzyService{dict}
 }
 
 func (service FuzzyService) Add(key, value string) {
@@ -50,12 +47,10 @@ func (service FuzzyService) Add(key, value string) {
 		}
 		bucket[histogram] = []Storage{storage}
 		return
-	} else {
-		service.keyList[len(key)] = skiplist.NewIntSet()
 	}
+
 	bucket = map[uint32][]Storage{histogram: []Storage{storage}}
 	service.dictionary[len(key)] = bucket
-	service.keyList[len(key)].Add(histogram)
 }
 
 func (service FuzzyService) Get(key string) (string, bool) {
