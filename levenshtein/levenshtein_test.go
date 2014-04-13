@@ -152,6 +152,32 @@ func BenchmarkHistogram(b *testing.B) {
 	}
 }
 
+func TestExtendedHistogram(t *testing.T) {
+	var testCases = []string{"ana", "are", "incredibil", "inexplicabil", "extraveral"}
+	for _, s := range testCases {
+		aux := make([]int, 64/BUCKET_BITS)
+		for _, c := range s {
+			aux[int(c)%(len(aux))]++
+		}
+		histogram := ComputeExtendedHistogram(s)
+		bit_mask := uint64(1<<BUCKET_BITS) - 1
+		for i := 0; i < 64/BUCKET_BITS; i++ {
+			if aux[i] != int(histogram&bit_mask) {
+				t.Log("Bad histogram for ", s)
+				t.Error("Didn't compute the histogram properly")
+				break
+			}
+			histogram >>= BUCKET_BITS
+		}
+	}
+}
+
+func BenchmarkExtendedHistogram(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		ComputeExtendedHistogram("informatica fmi unibuc")
+	}
+}
+
 func TestLowerBound(t *testing.T) {
 	var testCases = []struct {
 		source   uint32
@@ -181,10 +207,44 @@ func TestLowerBound(t *testing.T) {
 	}
 }
 
+func TestExtendedLowerBound(t *testing.T) {
+	var testCases = []struct {
+		source   uint64
+		target   uint64
+		distance int
+	}{
+		{1, 0, 1},
+		{(2 << BUCKET_BITS) + 3, (1 << (BUCKET_BITS * 2)) + 1, 3},
+		{(1 << BUCKET_BITS) + 3, (4 << (BUCKET_BITS * 2)) + 2, 3},
+	}
+	for _, testCase := range testCases {
+		distance := ExtendedLowerBound(testCase.source, testCase.target, 1)
+		if distance != testCase.distance {
+			t.Log("Difference between",
+				testCase.source,
+				"and",
+				testCase.target,
+				"computed as",
+				distance,
+				", should be",
+				testCase.distance)
+			t.Error("Failed to compute proper Lower Bound")
+		}
+	}
+}
+
 func BenchmarkLowerBound(b *testing.B) {
 	hist1, hist2 := ComputeHistogram("informatica"), ComputeHistogram("fmi unibuc")
 	diff := 1 // diferenta intre cele doua siruri
 	for n := 0; n < b.N; n++ {
 		LowerBound(hist1, hist2, diff)
+	}
+}
+
+func BenchmarkExtendedLowerBound(b *testing.B) {
+	hist1, hist2 := ComputeExtendedHistogram("informatica"), ComputeExtendedHistogram("fmi unibuc")
+	diff := 1 // diferenta intre cele doua siruri
+	for n := 0; n < b.N; n++ {
+		ExtendedLowerBound(hist1, hist2, diff)
 	}
 }

@@ -136,3 +136,47 @@ func LowerBound(histogram_source, histogram_target uint32, length_diff int) int 
 	diff = (diff & 0x33333333) + ((diff >> 2) & 0x33333333)
 	return (int((((diff+(diff>>4))&0x0F0F0F0F)*0x01010101)>>24) + length_diff) >> 1
 }
+
+/* Here we compute an extended histogram which allows us to have a better filter
+   for fetching a lower bound for the Levenshtein distance. However these functions
+   should only be used as a second filter since they are much slower than the pervious
+   ones and also take up more memory */
+
+const BUCKET_BITS = 8
+
+var buckets = make([]uint8, 64/BUCKET_BITS)
+
+func ComputeExtendedHistogram(s string) uint64 {
+	for i, _ := range buckets {
+		buckets[i] = 0
+	}
+	for _, c := range s {
+		index := int(c) % len(buckets)
+		if buckets[index] != ((1 << BUCKET_BITS) - 1) {
+			buckets[index]++
+		}
+	}
+	var result uint64 = 0
+	for i, value := range buckets {
+		result += (uint64(value) << uint(i*BUCKET_BITS))
+	}
+	return result
+}
+
+func Abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func ExtendedLowerBound(histogram_source, histogram_target uint64, length_diff int) int {
+	bit_mask := (1 << BUCKET_BITS) - 1
+	result := length_diff
+	for i := 0; i < 64/BUCKET_BITS; i++ {
+		source_bucket := int(histogram_source>>uint(i*BUCKET_BITS)) & bit_mask
+		target_bucket := int(histogram_target>>uint(i*BUCKET_BITS)) & bit_mask
+		result += Abs(target_bucket - source_bucket)
+	}
+	return result >> 1
+}
