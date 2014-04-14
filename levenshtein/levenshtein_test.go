@@ -215,7 +215,7 @@ func TestExtendedLowerBound(t *testing.T) {
 	}{
 		{1, 0, 1},
 		{(2 << BUCKET_BITS) + 3, (1 << (BUCKET_BITS * 2)) + 1, 3},
-		{(1 << BUCKET_BITS) + 3, (4 << (BUCKET_BITS * 2)) + 2, 3},
+		{(1 << BUCKET_BITS) + 3, (2 << (BUCKET_BITS * 2)) + 2, 2},
 	}
 	for _, testCase := range testCases {
 		distance := ExtendedLowerBound(testCase.source, testCase.target, 1)
