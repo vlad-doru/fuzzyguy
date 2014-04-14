@@ -2,6 +2,7 @@ package service
 
 import (
 	"container/heap"
+	// "fmt"
 	"github.com/vlad-doru/fuzzyguy/levenshtein"
 	"sort"
 	"sync"
@@ -22,16 +23,19 @@ type Storage struct {
 
 type FuzzyService struct {
 	dictionary map[int]map[uint32][]Storage
+	rwmutex    *sync.RWMutex
 }
 
 func NewFuzzyService() *FuzzyService {
 	dict := make(map[int]map[uint32][]Storage)
-	return &FuzzyService{dict}
+	mutex := &sync.RWMutex{}
+	return &FuzzyService{dict, mutex}
 }
 
 func (service FuzzyService) Add(key, value string) {
 	histogram := levenshtein.ComputeHistogram(key)
 	storage := Storage{key, value, levenshtein.ComputeExtendedHistogram(key)}
+	service.rwmutex.Lock()
 	bucket, present := service.dictionary[len(key)]
 	if present {
 		list, histogram_present := bucket[histogram]
@@ -39,41 +43,76 @@ func (service FuzzyService) Add(key, value string) {
 			for _, pair := range list {
 				if pair.key == key {
 					pair.value = value
+					service.rwmutex.Unlock()
 					return
 				}
 			}
 			bucket[histogram] = append(bucket[histogram], storage)
-			return
+		} else {
+			bucket[histogram] = []Storage{storage}
 		}
-		bucket[histogram] = []Storage{storage}
-		return
+	} else {
+		bucket = map[uint32][]Storage{histogram: []Storage{storage}}
+		service.dictionary[len(key)] = bucket
 	}
+	service.rwmutex.Unlock()
+}
 
-	bucket = map[uint32][]Storage{histogram: []Storage{storage}}
-	service.dictionary[len(key)] = bucket
+func (service FuzzyService) Delete(key string) bool {
+	histogram := levenshtein.ComputeHistogram(key)
+	service.rwmutex.Lock()
+	bucket, present := service.dictionary[len(key)]
+	if present {
+		list, histogram_present := bucket[histogram]
+		if histogram_present {
+			for index, pair := range list {
+				if pair.key == key {
+					list[index], list = list[len(list)-1], list[:len(list)-1]
+					if len(list) == 0 {
+						delete(bucket, histogram)
+						if len(bucket) == 0 {
+							delete(service.dictionary, len(key))
+						}
+						service.rwmutex.Unlock()
+						return true
+					}
+					bucket[histogram] = list
+					service.rwmutex.Unlock()
+					return true
+				}
+			}
+		}
+	}
+	service.rwmutex.Unlock()
+	return false
 }
 
 func (service FuzzyService) Get(key string) (string, bool) {
 	histogram := levenshtein.ComputeHistogram(key)
+	service.rwmutex.RLock()
 	bucket, present := service.dictionary[len(key)]
 	if present {
 		list, histogram_present := bucket[histogram]
 		if histogram_present {
 			for _, pair := range list {
 				if pair.key == key {
+					service.rwmutex.RUnlock()
 					return pair.value, true
 				}
 			}
 		}
 	}
+	service.rwmutex.RUnlock()
 	return "", false
 }
 
 func (service FuzzyService) Len() int {
 	result := 0
+	service.rwmutex.RLock()
 	for _, dict := range service.dictionary {
 		result += len(dict)
 	}
+	service.rwmutex.RUnlock()
 	return result
 }
 
@@ -130,6 +169,7 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 	start := query_len - threshold
 	stop := query_len + threshold + 1
 
+	service.rwmutex.RLock()
 	for i := start; i < stop; i++ {
 		go func(index int, mutex *sync.Mutex) {
 			diff := Abs(index - query_len)
@@ -158,6 +198,7 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 	for i := start; i < stop; i++ {
 		<-sync_channel
 	}
+	service.rwmutex.RUnlock()
 
 	sort.Sort(h)
 	results := make([]string, h.Len())

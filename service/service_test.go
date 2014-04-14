@@ -42,7 +42,7 @@ func BenchmarkHeapOperations(b *testing.B) {
 	}
 }
 
-func TestSimpleAddGet(t *testing.T) {
+func TestSimpleAddGetDelete(t *testing.T) {
 	service := NewFuzzyService()
 	service.Add("key", "value")
 	value, _ := service.Get("key")
@@ -53,6 +53,22 @@ func TestSimpleAddGet(t *testing.T) {
 	_, present := service.Get("nonexistent")
 	if present {
 		t.Error("Get of nonexistent fails")
+	}
+	service.Delete("key")
+	value, present = service.Get("key")
+	if present {
+		t.Error("Get of nonexistent after delete fails")
+		t.Error(value)
+	}
+	service.Add("key", "test")
+	service.Add("kye", "test")
+	service.Delete("key")
+	service.Delete("nonexistent")
+	service.Add("another", "test")
+	value, present = service.Get("key")
+	if present {
+		t.Error("Get of nonexistent after delete fails")
+		t.Error(value)
 	}
 }
 
@@ -93,6 +109,25 @@ func TestFuzzyService(t *testing.T) {
 	if result[1] != "super" {
 		t.Log("supre Query wrong")
 		t.Error("Failed the query action")
+	}
+}
+
+func TestConcurrencyFuzzyService(t *testing.T) {
+	queries, _, service := LoadTestSet("data/testset_300000.dat")
+	service = NewFuzzyService()
+
+	barrier := make(chan bool)
+	steps := 10000
+	for i := 0; i < steps; i++ {
+		go func(index int) {
+			service.Add(queries[index], "test")
+			// service.Query("anana", 2, 3)
+			// service.Delete("anana")
+			barrier <- true
+		}(i % len(queries))
+	}
+	for i := 0; i < steps; i++ {
+		<-barrier
 	}
 }
 
