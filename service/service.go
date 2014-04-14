@@ -2,14 +2,13 @@ package service
 
 import (
 	"container/heap"
-	// "fmt"
 	"github.com/vlad-doru/fuzzyguy/levenshtein"
 	"sort"
 	"sync"
 )
 
 type Service interface {
-	Add(key, value string)
+	Set(key, value string)
 	Get(key string) (string, bool)
 	Query(key string, distance, max_results int) []string
 	Len() int
@@ -32,7 +31,7 @@ func NewFuzzyService() *FuzzyService {
 	return &FuzzyService{dict, mutex}
 }
 
-func (service FuzzyService) Add(key, value string) {
+func (service FuzzyService) Set(key, value string) {
 	histogram := levenshtein.ComputeHistogram(key)
 	storage := Storage{key, value, levenshtein.ComputeExtendedHistogram(key)}
 	service.rwmutex.Lock()

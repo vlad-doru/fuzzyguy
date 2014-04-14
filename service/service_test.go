@@ -42,13 +42,13 @@ func BenchmarkHeapOperations(b *testing.B) {
 	}
 }
 
-func TestSimpleAddGetDelete(t *testing.T) {
+func TestSimpleSetGetDelete(t *testing.T) {
 	service := NewFuzzyService()
-	service.Add("key", "value")
+	service.Set("key", "value")
 	value, _ := service.Get("key")
 	if value != "value" {
 		t.Log(value)
-		t.Error("Simple add & get test fails")
+		t.Error("Simple Set & get test fails")
 	}
 	_, present := service.Get("nonexistent")
 	if present {
@@ -60,11 +60,11 @@ func TestSimpleAddGetDelete(t *testing.T) {
 		t.Error("Get of nonexistent after delete fails")
 		t.Error(value)
 	}
-	service.Add("key", "test")
-	service.Add("kye", "test")
+	service.Set("key", "test")
+	service.Set("kye", "test")
 	service.Delete("key")
 	service.Delete("nonexistent")
-	service.Add("another", "test")
+	service.Set("another", "test")
 	value, present = service.Get("key")
 	if present {
 		t.Error("Get of nonexistent after delete fails")
@@ -72,16 +72,16 @@ func TestSimpleAddGetDelete(t *testing.T) {
 	}
 }
 
-func BenchmarkServiceAdd(b *testing.B) {
+func BenchmarkServiceSet(b *testing.B) {
 	service := NewFuzzyService()
 	for n := 0; n < b.N; n++ {
-		service.Add("key", "value")
+		service.Set("key", "value")
 	}
 }
 
 func BenchmarkServiceGet(b *testing.B) {
 	service := NewFuzzyService()
-	service.Add("key", "value")
+	service.Set("key", "value")
 	for n := 0; n < b.N; n++ {
 		service.Get("key")
 	}
@@ -89,11 +89,11 @@ func BenchmarkServiceGet(b *testing.B) {
 
 func TestFuzzyService(t *testing.T) {
 	service := NewFuzzyService()
-	service.Add("ana", "super")
-	service.Add("anan", "value")
-	service.Add("super", "ceva")
-	service.Add("supret", "altceva")
-	service.Add("supretar", "altceva")
+	service.Set("ana", "super")
+	service.Set("anan", "value")
+	service.Set("super", "ceva")
+	service.Set("supret", "altceva")
+	service.Set("supretar", "altceva")
 
 	result := service.Query("supre", 2, 1)
 	if result[0] != "supret" {
@@ -117,17 +117,20 @@ func TestConcurrencyFuzzyService(t *testing.T) {
 	service = NewFuzzyService()
 
 	barrier := make(chan bool)
-	steps := 10000
+	steps := 1000
+	go func() {
+		for i := 0; i < steps; i++ {
+			<-barrier
+		}
+	}()
 	for i := 0; i < steps; i++ {
 		go func(index int) {
-			service.Add(queries[index], "test")
+			service.Set(queries[index], "test")
 			// service.Query("anana", 2, 3)
 			// service.Delete("anana")
 			barrier <- true
 		}(i % len(queries))
-	}
-	for i := 0; i < steps; i++ {
-		<-barrier
+		service.Set("another", "test")
 	}
 }
 
@@ -151,7 +154,7 @@ func LoadTestSet(name string) ([]string, []string, *FuzzyService) {
 	for i := 0; i < keys_nr; i++ {
 		l, _, _ = reader.ReadLine()
 		key = string(l)
-		service.Add(key, "test")
+		service.Set(key, "test")
 	}
 
 	l, _, _ = reader.ReadLine()
