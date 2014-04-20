@@ -15,7 +15,7 @@ def readData(filename):
 
 def main():
     time = 0
-    keys, queries = readData("../fuzzy/data/testset_50000.dat")
+    keys, queries = readData("../fuzzy/data/testset_5000.dat")
 
     req_params = {
         'store': 'fuzzytest',
@@ -37,6 +37,7 @@ def main():
         req_params['key'] = key
         try:
             r = s.put(url, req_params)
+            print(r)
             time += r.elapsed.microseconds
         except Exception as e:
             print(e)
