@@ -37,7 +37,9 @@ def main():
         req_params['key'] = key
         try:
             r = s.put(url, req_params)
-            print(r)
+            if (r.status_code != 200):
+                print(r)
+                break
             time += r.elapsed.microseconds
         except Exception as e:
             print(e)

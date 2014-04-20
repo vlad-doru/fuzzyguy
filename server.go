@@ -11,39 +11,45 @@ import (
 var stores map[string]*fuzzy.FuzzyService = make(map[string]*fuzzy.FuzzyService)
 
 func ParameterError(w http.ResponseWriter, parameter string) {
-	http.Error(w, fmt.Sprintf("Please provide a valid %s", parameter), http.StatusBadRequest)
+	http.Error(w, fmt.Sprintf("Please provide a valid %s parameter", parameter), http.StatusBadRequest)
+}
+
+func RequireParameters(parameters []string, w http.ResponseWriter, r *http.Request) (map[string]string, bool) {
+	result := make(map[string]string)
+	for _, parameter := range parameters {
+		result[parameter] = r.FormValue(parameter)
+		if len(result[parameter]) == 0 {
+			ParameterError(w, parameter)
+			return result, false
+		}
+	}
+	return result, true
 }
 
 func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
-	storeName := r.FormValue("store")
-	if len(storeName) == 0 {
-		ParameterError(w, "store")
-		return
-	}
-	store, present := stores[storeName]
-	if !present {
-		ParameterError(w, "store")
+	parameters, valid := RequireParameters([]string{"store", "key", "distance"}, w, r)
+	if !valid {
 		return
 	}
 
-	key := r.FormValue("key")
-	if len(key) == 0 {
-		ParameterError(w, "key")
+	store, present := stores[parameters["store"]]
+	if !present {
+		ParameterError(w, "store")
 		return
 	}
 
 	/* We always require a distance parameter in order to make every request more explicit
 	   about whether we would like to perform and exact match or an approximate one */
 
-	distance, err := strconv.Atoi(r.FormValue("distance"))
+	distance, err := strconv.Atoi(parameters["distance"])
 	if err != nil {
-		ParameterError(w, "distance")
+		ParameterError(w, "distance (numeric)")
 		return
 	}
 
 	/* We treat exact matching here */
 	if distance == 0 {
-		value, present := store.Get(key)
+		value, present := store.Get(parameters["key"])
 		if !present {
 			ParameterError(w, "key (Existent)")
 			return
@@ -55,78 +61,60 @@ func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
 	/* Approximate matching here */
 	results, err := strconv.Atoi(r.FormValue("results"))
 	if err != nil {
-		http.Error(w, "Please provide a results parameter", http.StatusBadRequest)
+		ParameterError(w, "results")
 		return
 	}
-	fuzzy_results := store.Query(key, distance, results)
+	fuzzy_results := store.Query(parameters["key"], distance, results)
 	json_response, _ := json.Marshal(fuzzy_results)
 	fmt.Fprintf(w, string(json_response))
 }
 
 func NewStoreHandler(w http.ResponseWriter, r *http.Request) {
-	storeName := r.FormValue("store")
-	if len(storeName) == 0 {
-		ParameterError(w, "store")
+	parameters, valid := RequireParameters([]string{"store"}, w, r)
+	if !valid {
 		return
 	}
-	_, present := stores[storeName]
+
+	_, present := stores[parameters["store"]]
 	if present {
 		http.Error(w, "This store already exists", http.StatusBadRequest)
 		return
 	}
 
-	stores[storeName] = fuzzy.NewFuzzyService()
+	stores[parameters["store"]] = fuzzy.NewFuzzyService()
 	fmt.Fprintf(w, "Store has successfully been created")
 	w.WriteHeader(http.StatusCreated)
 }
 
 func AddKeyValueHandler(w http.ResponseWriter, r *http.Request) {
-	storeName := r.FormValue("store")
-	if len(storeName) == 0 {
-		ParameterError(w, "store")
+	parameters, valid := RequireParameters([]string{"store", "key", "value"}, w, r)
+	if !valid {
 		return
 	}
-	store, present := stores[storeName]
+
+	store, present := stores[parameters["store"]]
 	if !present {
-		ParameterError(w, "store")
+		ParameterError(w, "store (existent)")
 		return
 	}
 
-	key := r.FormValue("key")
-	if len(key) == 0 {
-		ParameterError(w, "key")
-		return
-	}
-
-	value := r.FormValue("value")
-	if len(value) == 0 {
-		ParameterError(w, "value")
-		return
-	}
-
-	store.Set(key, value)
+	store.Set(parameters["key"], parameters["value"])
 	fmt.Fprintf(w, "Successfully set the key")
 }
 
 func DeleteKeyHandler(w http.ResponseWriter, r *http.Request) {
-	storeName := r.FormValue("store")
-	if len(storeName) == 0 {
-		ParameterError(w, "store")
+	parameters, valid := RequireParameters([]string{"store", "key"}, w, r)
+	if !valid {
 		return
 	}
-	store, present := stores[storeName]
+
+	store, present := stores[parameters["store"]]
 	if !present {
-		ParameterError(w, "store")
+		ParameterError(w, "store (existent)")
 		return
 	}
 
-	key := r.FormValue("key")
-	if len(key) == 0 {
-		ParameterError(w, "key")
-		return
-	}
-
-	deleted := store.Delete(key)
+	deleted := store.Delete(parameters["key"])
 	if deleted {
 		fmt.Fprintf(w, "Successfully deleted the key")
 	} else {
