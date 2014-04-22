@@ -142,7 +142,45 @@ func FuzzyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func AddBatchKeyValueHandler(w http.ResponseWriter, r *http.Request) {
+	parameters, valid := RequireParameters([]string{"store", "dictionary"}, w, r)
+	if !valid {
+		return
+	}
+
+	store, present := stores[parameters["store"]]
+	if !present {
+		ParameterError(w, "store (existent)")
+		return
+	}
+
+	dict := make(map[string]string)
+	err := json.Unmarshal([]byte(parameters["dictionary"]), &dict)
+	if err != nil {
+		ParameterError(w, "dictionary (JSON)")
+		return
+	}
+
+	for key, value := range dict {
+		store.Set(key, value)
+	}
+
+	fmt.Fprintf(w, "Successfully set the keys")
+}
+
+func BatchHandler(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case "PUT":
+		AddBatchKeyValueHandler(w, r)
+		break
+	default:
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	}
+}
+
 func main() {
 	http.HandleFunc("/fuzzy", FuzzyHandler)
+	http.HandleFunc("/fuzzy/batch", BatchHandler)
 	http.ListenAndServe(":8080", nil)
 }
