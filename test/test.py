@@ -62,5 +62,34 @@ def main():
     print(
         "Average time for a batch put request of {0} key-value pairs is {1} miliseconds".format(batch_size, time / (i * 1000)))
 
+    url = 'http://localhost:8080/fuzzy'
+
+    widgets = [
+        'Putting keys: ', Percentage(), ' ', Bar(marker=RotatingMarker()),
+        ' ', ETA(), ' ', FileTransferSpeed()]
+    pbar = ProgressBar(widgets=widgets, maxval=len(queries)).start()
+
+    req_params = {
+        'store': 'fuzzytest',
+        'distance': 3,
+        'results': 5
+    }
+
+    time = 0
+
+    for i, query in enumerate(queries):
+        correct, queried = query
+        req_params['key'] = queried
+        r = s.get(url, params=req_params)
+        if r.status_code != 200:
+            print(r, r.text)
+            break
+        time += r.elapsed.microseconds
+        pbar.update(i)
+    pbar.finish()
+    print("Average time for a get request with {0} keys datastore is {1} miliseconds".format(
+        len(keys), time / (len(queries) * 1000)))
+
+
 if __name__ == '__main__':
     main()

@@ -116,8 +116,9 @@ func (service FuzzyService) Len() int {
 }
 
 type KeyScore struct {
-	score int
-	key   string
+	prefix int
+	score  int
+	key    string
 }
 
 type KeyScoreHeap []KeyScore
@@ -127,11 +128,33 @@ func (h KeyScoreHeap) Len() int {
 	return len(h)
 }
 
-func (h KeyScoreHeap) Less(i, j int) bool {
-	if h[i].score == h[j].score {
-		return h[i].key < h[j].key
+func Min(x, y int) int {
+	if x < y {
+		return x
 	}
-	return h[i].score > h[j].score // this is the max-heap condition
+	return y
+}
+
+func Prefix(source, target string) int {
+	prefix := 0
+	for i := 0; i < Min(len(source), len(target)); i++ {
+		if source[i] == target[i] {
+			prefix++
+		} else {
+			break
+		}
+	}
+	return prefix
+}
+
+func (h KeyScoreHeap) Less(i, j int) bool {
+	if h[i].prefix != h[j].prefix {
+		return h[i].prefix < h[j].prefix
+	}
+	if h[i].score != h[j].score {
+		return h[i].score > h[j].score
+	}
+	return h[i].key < h[j].key // this is the max-heap condition
 }
 
 func (h KeyScoreHeap) Swap(i, j int) {
@@ -183,7 +206,7 @@ func (service FuzzyService) Query(query string, threshold, max_results int) []st
 					distance, within := levenshtein.DistanceThreshold(query, pair.key, threshold)
 					if within {
 						mutex.Lock()
-						heap.Push(h, KeyScore{distance, pair.key})
+						heap.Push(h, KeyScore{Prefix(pair.key, query), distance, pair.key})
 						if h.Len() > max_results {
 							heap.Pop(h)
 						}

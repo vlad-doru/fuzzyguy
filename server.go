@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/vlad-doru/fuzzyguy/fuzzy"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -66,6 +67,7 @@ func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fuzzy_results := store.Query(parameters["key"], distance, results)
 	json_response, _ := json.Marshal(fuzzy_results)
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, string(json_response))
 }
 
@@ -127,16 +129,16 @@ func FuzzyHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		GetKeyHandler(w, r)
-		break
+		return
 	case "PUT":
 		AddKeyValueHandler(w, r)
-		break
+		return
 	case "DELETE":
 		DeleteKeyHandler(w, r)
-		break
+		return
 	case "POST":
 		NewStoreHandler(w, r)
-		break
+		return
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
@@ -173,14 +175,68 @@ func BatchHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "PUT":
 		AddBatchKeyValueHandler(w, r)
-		break
+		return
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
 
+func StaticHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path[1:] == "static/admin.html" {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	} else {
+		http.ServeFile(w, r, r.URL.Path[1:])
+	}
+}
+
+func AdminHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "static/admin.html")
+}
+
+func DemoHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "demo/index.html")
+}
+
+type Configuration struct {
+	Port     string
+	Admin    string
+	Password string
+}
+
+func LoadConfiguration() *Configuration {
+	// We always get our configuration from conf.json
+	file, _ := os.Open("conf.json")
+
+	decoder := json.NewDecoder(file)
+	configuration := new(Configuration)
+	err := decoder.Decode(&configuration)
+	if err != nil {
+		fmt.Println("[FATAL ERROR]", err)
+		return nil
+	}
+	return configuration
+}
+
 func main() {
+
+	configuration := LoadConfiguration()
+	if configuration == nil {
+		return
+	}
+
+	// API Handlers
 	http.HandleFunc("/fuzzy", FuzzyHandler)
 	http.HandleFunc("/fuzzy/batch", BatchHandler)
-	http.ListenAndServe(":8080", nil)
+
+	// Serve all static files
+	http.HandleFunc("/static/", StaticHandler)
+	http.HandleFunc("/demo/", StaticHandler)
+
+	// Admin handler
+	http.HandleFunc("/admin", AdminHandler)
+
+	// Demo handler
+	http.HandleFunc("/demo", DemoHandler)
+
+	http.ListenAndServe(fmt.Sprintf(":%s", configuration.Port), nil)
 }

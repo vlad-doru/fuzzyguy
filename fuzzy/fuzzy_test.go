@@ -35,7 +35,7 @@ func BenchmarkHeapOperations(b *testing.B) {
 	h := new(KeyScoreHeap)
 	heap.Init(h)
 	for n := 0; n < b.N; n++ {
-		heap.Push(h, KeyScore{1, "test"})
+		heap.Push(h, KeyScore{score: 1, key: "test"})
 		if h.Len() > 5 {
 			heap.Pop(h)
 		}
@@ -106,7 +106,7 @@ func TestFuzzyService(t *testing.T) {
 		t.Log("supre Query wrong")
 		t.Error("Failed the query action")
 	}
-	if result[1] != "super" {
+	if result[1] != "supretar" {
 		t.Log("supre Query wrong")
 		t.Error("Failed the query action")
 	}
