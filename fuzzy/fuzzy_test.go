@@ -140,8 +140,6 @@ func TestConcurrencyFuzzyService(t *testing.T) {
 	for i := 0; i < steps; i++ {
 		go func(index int) {
 			service.Set(queries[index], "test")
-			// service.Query("anana", 2, 3)
-			// service.Delete("anana")
 			barrier <- true
 		}(i % len(queries))
 		service.Set("another", "test")

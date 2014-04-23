@@ -192,8 +192,8 @@ func StaticHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func AdminHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "static/admin.html")
+func MonitorHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "demo/monitor.html")
 }
 
 func DemoHandler(w http.ResponseWriter, r *http.Request) {
@@ -246,14 +246,14 @@ func main() {
 	http.HandleFunc("/fuzzy/batch", BatchHandler)
 
 	// Serve all static files
-	http.HandleFunc("/static/", StaticHandler)
-	http.HandleFunc("/demo/", StaticHandler)
-
-	// Admin handler
-	http.HandleFunc("/admin", AdminHandler)
+	http.HandleFunc("/demo/css/", StaticHandler)
+	http.HandleFunc("/demo/img/", StaticHandler)
+	http.HandleFunc("/demo/js/", StaticHandler)
 
 	// Demo handler
 	http.HandleFunc("/demo", DemoHandler)
+	// Demo Monitor handler
+	http.HandleFunc("/demo/monitor", MonitorHandler)
 	// Demo load english dictionary
 	http.HandleFunc("/demo/loadenglish", EnglishHandler)
 

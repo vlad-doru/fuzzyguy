@@ -49,7 +49,7 @@
                         <a href="#how">Explicatii</a>
                     </li>
                     <li class="page-scroll">
-                        <a href="#contact">Contact</a>
+                        <a href="#monitor">Monitorizare</a>
                     </li>
                 </ul>
             </div>
@@ -131,12 +131,8 @@
             <div class="container">
                 <div class="col-lg-8 col-lg-offset-2">
                     <h2>Explicatii</h2>
-                    <p>Servicul a fost scris folosind limbajul de programare Go intrucat acesta permite dezvoltarea cu usuinta a programelor ce se bazeaza pe paralelizarea sarcinilor.</p>
+                    <p>Servicul a fost scris folosind limbajul de programare Go intrucat acesta este compila si permite dezvoltarea cu usuinta a programelor ce se bazeaza pe paralelizarea sarcinilor imbunatatind performanta serviciului.</p>
                     
-             <!--        <p>De asemenea, codul Go este compilat in limbaj masina ceea ce inseamna ca serviciul este unul performant.</p> -->
-               <!--      <p>Comunicarea cu serviciul se face prin intermediul unui API de tipul REST</p> -->
-
-                    <!-- <p>Prin intermediul unor operatii pe biti serviciul poate determina o margine inferioara a distantei Levenshtein intre doua cuvinte. Folosind aceasta proprietate cautarea aproximativa a unei chei cu distanta 3 necesita calculul efectiv al distantei Levenshtein pentru doar 3% din cuvinte in medie.</p> -->
 
                     <p>Functia de hash are rolul de a numara paritatea caracterelor ce sunt mapate catre o anumita valoarea in intervalul 0-31.</p>
 
@@ -185,18 +181,16 @@
         </div>
     </section>
 
-    <section id="contact" class="container content-section text-center">
+    <section id="monitor" class="container content-section text-center">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2">
-                <h2>Contact Start Bootstrap</h2>
-                <p>Feel free to email us to provide some feedback on our templates, give us suggestions for new templates and themes, or to just say hello!</p>
-                <p>feedback@startbootstrap.com</p>
-                <ul class="list-inline banner-social-buttons">
-                    <li><a href="https://twitter.com/SBootstrap" class="btn btn-default btn-lg"><i class="fa fa-twitter fa-fw"></i> <span class="network-name">Twitter</span></a>
+                <h2>Monitorizare</h2>
+                <p>Serviciul permite monitorizarea permanenta a acestuia. El ofera statistici in timp real legate de operatiile ce sunt executate de acesta cat si despre gradul de incarcare al acestuia.</p>
+                <p>Codul serviciului se poate gasi pe GitHub alaturi de documentatia API-ului sau</p>
+                <ul class="list-inline">
+                	<li><a href="demo/monitor" class="btn btn-info btn-lg"><i class="fa fa-bar-chart-o"></i> <span >Administrare</span></a>
                     </li>
-                    <li><a href="https://github.com/IronSummitMedia/startbootstrap" class="btn btn-default btn-lg"><i class="fa fa-github fa-fw"></i> <span class="network-name">Github</span></a>
-                    </li>
-                    <li><a href="https://plus.google.com/+Startbootstrap/posts" class="btn btn-default btn-lg"><i class="fa fa-google-plus fa-fw"></i> <span class="network-name">Google+</span></a>
+                    <li><a href="https://github.com/IronSummitMedia/startbootstrap" class="btn btn-info btn-lg"><i class="fa fa-github fa-fw"></i> <span >Github</span></a>
                     </li>
                 </ul>
             </div>
@@ -212,180 +206,8 @@
 
     <!-- Custom Theme JavaScript -->
     <script src="demo/js/grayscale.js"></script>
-
-    <script>
-	$(document).ready(function(){
-		var serviceURL = "fuzzy?store=english&distance=3&results=5&key="
-		var exactURL = "fuzzy?store=english&distance=0&key="
-		var fuzzyURL = "fuzzy"
-		
-		var input = $("#english")
-		var definition = $("#definition")
-		var dictionary = $("#dictionary")
-		var addword = $("#addword")
-
-		$.ajax({
-			"url":fuzzyURL,
-			"type": 'POST',
-			"data": {"store": "english"}
-		});
-
-		input.autocomplete({
-			source: function( request, response ){
-				var url =  serviceURL + request["term"]
-				url = encodeURI(url)
-				$.getJSON(url, response);
-			}
-    	});
-    	input.on('keyup', function(){
-    		var url = exactURL + input.val()
-    		url = encodeURI(url)
-    		$.ajax({
-   				"url":url,
-    			"type": 'GET',
-    			success: function(data){
-    				definition.text(data)
-    			},
-    			error: function(data){
-    				definition.text("")
-    			}
-    		});
-    	})
-
-    	dictionary.on('submit', function(e){
-    		e.preventDefault();
-    	})
-
-    	addword.on('submit', function(e){
-    		e.preventDefault();
-    		var key = $("#key").val()
-    		var value = $("#value").val()
-    		var dict = {
-    			key: key,
-    			value: value,
-    			store: "english"
-    		}
-    		$.ajax({
-   				"url":fuzzyURL,
-    			"type": 'PUT',
-    			"data": dict,
-    			success: function(data){
-    				addword.find("input[type=text], textarea").val("")
-    				$("#success").slideDown().delay(1500).slideUp()
-    			},
-    			error: function(data){
-    				console.log(data)
-    			}
-    		});
-    	});
-
-    	var english = $("#loadenglish")
-    	// Ladda.bind('#loadenglish')
-
-    	english.on('click', function(e){
-    		e.preventDefault()
-    		var l = Ladda.create(this)
-    		l.start()
-    		$.ajax({
-   				"url": "demo/loadenglish",
-    			"type": 'GET',
-    			success: function(data){
-    				console.log(data)
-    				$("#engsuccess").slideDown().delay(1500).slideUp()
-    			},
-    			error: function(data){
-    				console.log(data)
-    			}
-    		}).always(function(){
-    			l.stop()
-    		})
-    	})
-
-    	var histhead = $("#histhead")
-    	var histbody = $("#histbody")
-    	for (var i = 0; i < 32; i++) {
-    		histhead.append("<th>"+i+"</th>")
-    		histbody.append("<td>0</td>")
-    	};
-
-    	var values = $("#histbody td")
-    	var word = $("#word strong")
-
-    	function sleep(millis, callback, j) {
-		    setTimeout(function()
-		            { callback(j); }
-		    , millis);
-		}
-		var hash=$("#hash")
-		var charduration = 2000
-
-		var computeHist = function(id) {
-			w = $("#word" + id).val()
-			for (var i =0 ; i<w.length; i++) {
-				sleep(i*charduration, function(j){
-					var prefix = w.substring(0, j)
-					var suffix = w.substring(j+1, w.length)
-					word.html(prefix + "<span style='border-bottom:3px solid white; text-algin:center'>"+w[j]+"</span>" + suffix)
-					var code = w[j].charCodeAt()
-					var bucket = code%32
-					hash.html( code + "(" + w[j] + ") % 32 = " + (bucket))
-					var cell = $(values[bucket])
-					var add_to = parseInt(cell.text())
-					cell.css('background-color', '#5bc0de')
-					cell.text((add_to + 1)%2)
-					setTimeout(function(){
-						cell.css('background-color', 'transparent')
-					},1500)
-				}, i)
-    		} 
-    		setTimeout(function(){
-    			word.html("&zwnj;")	
-    			var hist = ""
-    			for (var i =0; i < values.length; i++){
-    				cell = $(values[i])
-    				hist += cell.text()
-    				cell.text("0")
-    			}	
-    			$("#hist" + id).text(hist)
-    			hash.html("&zwnj;")
-    		}, w.length*charduration) 
-		}
-
-    	$("#histogram").on('submit', function(e){
-    		$("#hist1").html("&zwnj;")
-    		$("#hist2").html("&zwnj;")
-    		$("#x1").html("&zwnj;")
-    		$("#x2").html("&zwnj;")
-    		$("#difference").html("");
-    		e.preventDefault();
-    		computeHist("1") 
-    		setTimeout(function(){
-    			computeHist("2") 
-    		}, ($("#word1").val().length+1) * charduration);
-    		setTimeout(function(){
-    			$("#x1").html($("#hist1").text())
-    			$("#x1").fadeTo(600, 0.8)
-    			setTimeout(function(){
-    				$("#x2").html($("#hist2").text())
-    				$("#x2").fadeTo(600, 0.8)
-    			},1000)
-    			setTimeout(function(){
-    				var dif = 0
-    				var h1 = $("#hist1").text()    				
-    				var h2 = $("#hist2").text()
-    				for (var i = 0 ; i < 32; ++i){
-    					if (h1[i] != h2[i]) {
-    						dif++
-    					}
-    				}
-    				var lower = Math.abs($("#word1").val().length - $("#word2").val().length)
-    				$("#difference").html("Biti diferiti " + dif + "<br/> Limita inferioara este (" + dif + "(biti diferiti) + " + lower + "(diferenta lungimi) ) / 2 = " + (lower + dif)/2).slideDown()
-    			})
-    		}, charduration*($("#word1").val().length+$("#word2").val().length+2))
-    	});
-	})
-	</script>
-
+	<!-- Custom Fuzzy JavaScript interactions -->
+	<script src="demo/js/fuzzy.js"></script>
 </body>
 
 </html>
