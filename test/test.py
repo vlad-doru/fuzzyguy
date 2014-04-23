@@ -22,7 +22,7 @@ def chunks(l, n):
 
 def main():
     time = 0
-    keys, queries = readData("../fuzzy/data/testset_300000.dat")
+    keys, queries = readData("../fuzzy/data/testset_100000.dat")
 
     req_params = {
         'store': 'fuzzytest',

@@ -127,7 +127,7 @@ func TestFuzzyService(t *testing.T) {
 }
 
 func TestConcurrencyFuzzyService(t *testing.T) {
-	queries, _, service := LoadTestSet("data/testset_300000.dat")
+	queries, _, service := LoadTestSet("data/testset_100000.dat")
 	service = NewFuzzyService()
 
 	barrier := make(chan bool)
@@ -153,7 +153,7 @@ func LoadTestSet(name string) ([]string, []string, *FuzzyService) {
 	var keys_nr, queries_nr int
 	var queries, correct []string
 
-	fmt.Printf("[FILE NAME %s ]\n", name)
+	fmt.Printf("\n[FILE NAME %s ]\n", name)
 	file, err := os.Open(name)
 	if err != nil {
 		log.Fatal(err)
