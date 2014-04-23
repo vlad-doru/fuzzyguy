@@ -43,10 +43,10 @@
                         <a href="#page-top"></a>
                     </li>
                     <li class="page-scroll">
-                        <a href="#about">About</a>
+                        <a href="#demo">Demo</a>
                     </li>
                     <li class="page-scroll">
-                        <a href="#download">Download</a>
+                        <a href="#how">Explicatii</a>
                     </li>
                     <li class="page-scroll">
                         <a href="#contact">Contact</a>
@@ -66,7 +66,7 @@
                         <h1 class="brand-heading" style="font-weight:100">Fuzzy<strong style="-webkit-text-stroke:3px  white; color:black">Guy</strong></h1>
                         <p class="intro-text">Un serviciu in-memory ce permite stocarea datelor de tipul cheie valoare cu posibilitatea interogare aproximativa</p>
                         <div class="page-scroll">
-                            <a href="#about" class="btn btn-circle">
+                            <a href="#demo" class="btn btn-circle">
                                 <i class="fa fa-angle-double-down animated"></i>
                             </a>
                         </div>
@@ -76,35 +76,110 @@
         </div>
     </section>
 
-    <section id="about" class="container content-section text-center">
+    <section id="demo" class="container content-section text-center">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2">
                 <h2>Demo</h2>
-                <p>In cele ce urmeaza vom exemplifica una din multele aplicatii ce pot folosi serviciul creat de noi. Astfel vom implementa o aplicatie de tipul unui dictionar explicativ al cuvintelor din limba engleza.</p>
+
+                <p>Operatiile de adaugare si cautare se pot face extrem de usor prin intermediul unui API bazat pe protocolul HTTP, urmarind standardul REST.</p>
+
+				<div class="row">
+                	<form role="form" id="addword">
+	                	<div class="form-group col-sm-5">
+	                	<label for="key">Cheie</label>
+	                	<input type="text" id="key" class="form-control" required>
+	                	</div>
+	                	<div class="form-group col-sm-5">
+	                	<label for="key">Valoare</label>
+	                	<input type="text" id="value" class="form-control" required>
+	                	</div>
+	                	<button class="btn btn-info col-sm-2" style="margin-top:25px"><i class="fa fa-check-square-o"></i>Adauga</button>
+	            	</form>
+                </div>
+                <div id="success" class="alert alert-success" style="display:none">
+	            	Ati adaugat cheia cu success
+	            </div>
+
+				<p>Va recomandam sa incarcati in serviciu dictionarul explicativ al limbii engleze pentru a putea observa performanta serviciului pe un set larg de date </p>
+
+				<button id="loadenglish" class="ladda-button btn btn-info zoom-in"><span class="ladda-label">Incarca dictionarul</span></button>
+				<div id="engsuccess" style="display:none">
+					<br>
+					<p class="alert alert-success" style="font-size:14px">Au fost adaugate datele din dictionar cu succes.</p>	            	
+	            </div>
+                <hr>
                 <p>Se va observa viteza pe care aplicatia o are folosind serviciul ca infrastructura</p>
-                
-            	<form role="form" class="col-sm-5" id="dictionary">
-                	<div class="form-group">
-                	<input type="text" id="english" class="form-control">
-                	</div>
-            	</form> 
-            	<div class="col-sm-7" id="definition" style="text-algin:left; border-left:2px solid white">
-            		
-            	</div>
-               
+				
+
+
+                <div class="row">
+                	<form role="form" class="col-sm-5" id="dictionary">
+	                	<div class="form-group">
+	                	<input type="text" id="english" class="form-control">
+	                	</div>
+	            	</form> 
+	            	<div class="col-sm-7" id="definition" style="text-algin:left; border-left:2px solid white;min-height:35px"></div>
+                </div>
                             
 				
             </div>
         </div>
     </section>
 
-    <section id="download" class="content-section text-center">
+    <section id="how" class="content-section text-center">
         <div class="download-section">
             <div class="container">
                 <div class="col-lg-8 col-lg-offset-2">
-                    <h2>Download Grayscale</h2>
-                    <p>You can download Grayscale for free on the download page at Start Bootstrap. You can also get the source code directly from GitHub if you prefer. Additionally, Grayscale is the first Start Bootstrap theme to come with a LESS file for easy color customization!</p>
-                    <a href="http://startbootstrap.com/grayscale" class="btn btn-default btn-lg">Visit Download Page</a>
+                    <h2>Explicatii</h2>
+                    <p>Servicul a fost scris folosind limbajul de programare Go intrucat acesta permite dezvoltarea cu usuinta a programelor ce se bazeaza pe paralelizarea sarcinilor.</p>
+                    
+             <!--        <p>De asemenea, codul Go este compilat in limbaj masina ceea ce inseamna ca serviciul este unul performant.</p> -->
+               <!--      <p>Comunicarea cu serviciul se face prin intermediul unui API de tipul REST</p> -->
+
+                    <!-- <p>Prin intermediul unor operatii pe biti serviciul poate determina o margine inferioara a distantei Levenshtein intre doua cuvinte. Folosind aceasta proprietate cautarea aproximativa a unei chei cu distanta 3 necesita calculul efectiv al distantei Levenshtein pentru doar 3% din cuvinte in medie.</p> -->
+
+                    <p>Functia de hash are rolul de a numara paritatea caracterelor ce sunt mapate catre o anumita valoarea in intervalul 0-31.</p>
+
+                    <form id="histogram" class="row" role="form">
+                    	<div class="col-sm-6">
+                    		<input id="word1" name="word1" type="text" class="form-control" value="acesta" placeholder="Cuvant 1" required>
+                    		<strong id="hist1" >&zwnj;</strong>
+                    	</div>
+                    	<div class="form-group col-sm-6">
+                    		<input value="aceea" id="word2" name="word2" type="text" class="form-control" placeholder="Cuvant 2" required>
+                    		<strong id="hist2">&zwnj;</strong>
+                    	</div>
+                    	<input type="submit" value="Calculeaza histogramele" class="btn btn-info" id="computeHistogram">
+                    </form>
+                    <div  style="margin-left:-250px">
+						<span id="x1" style="font-weight:bold; position:absolute; opacity:0">10001</span>
+						<span id="x2" style="font-weight:bold; position:absolute; opacity:0;">11001</span></div>
+					
+					<div id="word" class="row"><strong style="font-size:20px">&zwnj;</strong></div>
+					<hr>
+
+                    <table class="table table-bordered">
+                    	<thead>
+                    		<tr id="histhead"></tr>
+                    	</thead>
+                    	<tbody>
+                    		<tr id="histbody"></tr>
+                    	</tbody>
+                    </table>
+
+					<div>
+						<strong id="difference" style="display:none"> &zwnj; </strong>
+					</div>
+
+                    <div id="hash" class="row">
+                    	&zwnj;
+                    </div>
+                    
+
+                    <p>Se deduce apoi ca o limita inferioara pentru distanta Levenshtein intre doua siruri de caractere este data de numarul de biti diferiti din cele doua histograme si diferenta lunigimilor cuvintelor, impartita la 2.</p>
+
+					<p>Folosind functia de hash de mai sus serviciul utilizeaza operatii pe biti pentru calculul eficient al acesteia, folosind de asemenea memoizarea histogramelor cuvintelor existente deja in sistem. Astfel serviciul calculeaza valoarea distantei Levenshtein efectiva in doar 3% din cazuri pe medie.</p>
+
                 </div>
             </div>
         </div>
@@ -142,9 +217,18 @@
 	$(document).ready(function(){
 		var serviceURL = "fuzzy?store=english&distance=3&results=5&key="
 		var exactURL = "fuzzy?store=english&distance=0&key="
+		var fuzzyURL = "fuzzy"
 		
 		var input = $("#english")
 		var definition = $("#definition")
+		var dictionary = $("#dictionary")
+		var addword = $("#addword")
+
+		$.ajax({
+			"url":fuzzyURL,
+			"type": 'POST',
+			"data": {"store": "english"}
+		});
 
 		input.autocomplete({
 			source: function( request, response ){
@@ -167,6 +251,138 @@
     			}
     		});
     	})
+
+    	dictionary.on('submit', function(e){
+    		e.preventDefault();
+    	})
+
+    	addword.on('submit', function(e){
+    		e.preventDefault();
+    		var key = $("#key").val()
+    		var value = $("#value").val()
+    		var dict = {
+    			key: key,
+    			value: value,
+    			store: "english"
+    		}
+    		$.ajax({
+   				"url":fuzzyURL,
+    			"type": 'PUT',
+    			"data": dict,
+    			success: function(data){
+    				addword.find("input[type=text], textarea").val("")
+    				$("#success").slideDown().delay(1500).slideUp()
+    			},
+    			error: function(data){
+    				console.log(data)
+    			}
+    		});
+    	});
+
+    	var english = $("#loadenglish")
+    	// Ladda.bind('#loadenglish')
+
+    	english.on('click', function(e){
+    		e.preventDefault()
+    		var l = Ladda.create(this)
+    		l.start()
+    		$.ajax({
+   				"url": "demo/loadenglish",
+    			"type": 'GET',
+    			success: function(data){
+    				console.log(data)
+    				$("#engsuccess").slideDown().delay(1500).slideUp()
+    			},
+    			error: function(data){
+    				console.log(data)
+    			}
+    		}).always(function(){
+    			l.stop()
+    		})
+    	})
+
+    	var histhead = $("#histhead")
+    	var histbody = $("#histbody")
+    	for (var i = 0; i < 32; i++) {
+    		histhead.append("<th>"+i+"</th>")
+    		histbody.append("<td>0</td>")
+    	};
+
+    	var values = $("#histbody td")
+    	var word = $("#word strong")
+
+    	function sleep(millis, callback, j) {
+		    setTimeout(function()
+		            { callback(j); }
+		    , millis);
+		}
+		var hash=$("#hash")
+		var charduration = 2000
+
+		var computeHist = function(id) {
+			w = $("#word" + id).val()
+			for (var i =0 ; i<w.length; i++) {
+				sleep(i*charduration, function(j){
+					var prefix = w.substring(0, j)
+					var suffix = w.substring(j+1, w.length)
+					word.html(prefix + "<span style='border-bottom:3px solid white; text-algin:center'>"+w[j]+"</span>" + suffix)
+					var code = w[j].charCodeAt()
+					var bucket = code%32
+					hash.html( code + "(" + w[j] + ") % 32 = " + (bucket))
+					var cell = $(values[bucket])
+					var add_to = parseInt(cell.text())
+					cell.css('background-color', '#5bc0de')
+					cell.text((add_to + 1)%2)
+					setTimeout(function(){
+						cell.css('background-color', 'transparent')
+					},1500)
+				}, i)
+    		} 
+    		setTimeout(function(){
+    			word.html("&zwnj;")	
+    			var hist = ""
+    			for (var i =0; i < values.length; i++){
+    				cell = $(values[i])
+    				hist += cell.text()
+    				cell.text("0")
+    			}	
+    			$("#hist" + id).text(hist)
+    			hash.html("&zwnj;")
+    		}, w.length*charduration) 
+		}
+
+    	$("#histogram").on('submit', function(e){
+    		$("#hist1").html("&zwnj;")
+    		$("#hist2").html("&zwnj;")
+    		$("#x1").html("&zwnj;")
+    		$("#x2").html("&zwnj;")
+    		$("#difference").html("");
+    		e.preventDefault();
+    		computeHist("1") 
+    		setTimeout(function(){
+    			computeHist("2") 
+    		}, ($("#word1").val().length+1) * charduration);
+    		setTimeout(function(){
+    			$("#x1").html($("#hist1").text())
+    			$("#x1").fadeTo(600, 0.8)
+    			setTimeout(function(){
+    				$("#x2").html($("#hist2").text())
+    				$("#x2").fadeTo(600, 0.8)
+    			},1000)
+    			setTimeout(function(){
+    				var dif = 0
+    				var h1 = $("#hist1").text()    				
+    				var h2 = $("#hist2").text()
+    				for (var i = 0 ; i < 32; ++i){
+    					if (h1[i] != h2[i]) {
+    						dif++
+    					}
+    				}
+    				var lower = Math.abs($("#word1").val().length - $("#word2").val().length)
+    				$("#difference").html("Biti diferiti " + dif + "<br/> Limita inferioara este (" + dif + "(biti diferiti) + " + lower + "(diferenta lungimi) ) / 2 = " + (lower + dif)/2).slideDown()
+    			})
+    		}, charduration*($("#word1").val().length+$("#word2").val().length+2))
+    	});
 	})
 	</script>
 

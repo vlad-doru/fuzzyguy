@@ -70,6 +70,20 @@ func TestSimpleSetGetDelete(t *testing.T) {
 		t.Error("Get of nonexistent after delete fails")
 		t.Error(value)
 	}
+
+	service.Set("key", "test")
+	value, _ = service.Get("key")
+	if value != "test" {
+		t.Error("Service did not record our change")
+		t.Error(value)
+	}
+
+	service.Set("key", "another")
+	value, _ = service.Get("key")
+	if value != "another" {
+		t.Error("Service did not record our change")
+		t.Error(value)
+	}
 }
 
 func BenchmarkServiceSet(b *testing.B) {

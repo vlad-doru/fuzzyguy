@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/vlad-doru/fuzzyguy/fuzzy"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var stores map[string]*fuzzy.FuzzyService = make(map[string]*fuzzy.FuzzyService)
@@ -197,6 +200,20 @@ func DemoHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "demo/index.html")
 }
 
+func EnglishHandler(w http.ResponseWriter, r *http.Request) {
+	file, err := os.Open("demo/data/english.dat")
+	if err != nil {
+		log.Fatal(err)
+	}
+	reader := bufio.NewScanner(file)
+
+	store, _ := stores["english"]
+	for reader.Scan() {
+		split := strings.Split(reader.Text(), "\t")
+		store.Set(split[0], split[1])
+	}
+}
+
 type Configuration struct {
 	Port     string
 	Admin    string
@@ -237,6 +254,8 @@ func main() {
 
 	// Demo handler
 	http.HandleFunc("/demo", DemoHandler)
+	// Demo load english dictionary
+	http.HandleFunc("/demo/loadenglish", EnglishHandler)
 
 	http.ListenAndServe(fmt.Sprintf(":%s", configuration.Port), nil)
 }

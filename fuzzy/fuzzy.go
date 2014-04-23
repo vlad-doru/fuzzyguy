@@ -39,9 +39,9 @@ func (service FuzzyService) Set(key, value string) {
 	if present {
 		list, histogram_present := bucket[histogram]
 		if histogram_present {
-			for _, pair := range list {
+			for i, pair := range list {
 				if pair.key == key {
-					pair.value = value
+					list[i].value = value
 					service.rwmutex.Unlock()
 					return
 				}
@@ -154,7 +154,7 @@ func (h KeyScoreHeap) Less(i, j int) bool {
 	if h[i].score != h[j].score {
 		return h[i].score > h[j].score
 	}
-	return h[i].key < h[j].key // this is the max-heap condition
+	return h[i].key > h[j].key // this is the max-heap condition
 }
 
 func (h KeyScoreHeap) Swap(i, j int) {
