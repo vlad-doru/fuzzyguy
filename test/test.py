@@ -26,7 +26,7 @@ def chunks(l, n):
 def main():
     time = 0
     keys, queries = readData(
-        "fuzzy/data/testset_{0}.dat".format(sys.argv[1]))
+        "test/data/testset_{0}.dat".format(sys.argv[1]))
 
     req_params = {
         'store': 'fuzzytest',
