@@ -1,7 +1,10 @@
+from __future__ import print_function
+from __future__ import division
+
 import requests
 import timeit
-from progressbar import *
 import json
+import sys
 
 
 def readData(filename):
@@ -22,7 +25,8 @@ def chunks(l, n):
 
 def main():
     time = 0
-    keys, queries = readData("../fuzzy/data/testset_100000.dat")
+    keys, queries = readData(
+        "fuzzy/data/testset_{0}.dat".format(sys.argv[1]))
 
     req_params = {
         'store': 'fuzzytest',
@@ -34,11 +38,7 @@ def main():
     r = s.post(url, req_params)
     url = 'http://localhost:8080/fuzzy/batch'
 
-    widgets = [
-        'Putting keys: ', Percentage(), ' ', Bar(marker=RotatingMarker()),
-        ' ', ETA(), ' ', FileTransferSpeed()]
-    batch_size = 10000
-    pbar = ProgressBar(widgets=widgets, maxval=len(keys) / batch_size).start()
+    batch_size = 100000
 
     i = 0
 
@@ -56,39 +56,44 @@ def main():
             print(r.status_code, r.text)
             break
 
-        pbar.update(i)
-    pbar.finish()
+    batch_time = time / (i * 1000)
+    batch_total = time
 
-    print(
-        "Average time for a batch put request of {0} key-value pairs is {1} miliseconds".format(batch_size, time / (i * 1000)))
-
-    url = 'http://localhost:8080/fuzzy'
-
-    widgets = [
-        'Putting keys: ', Percentage(), ' ', Bar(marker=RotatingMarker()),
-        ' ', ETA(), ' ', FileTransferSpeed()]
-    pbar = ProgressBar(widgets=widgets, maxval=len(queries)).start()
+    distance = sys.argv[2]
+    results = sys.argv[3]
 
     req_params = {
         'store': 'fuzzytest',
-        'distance': 3,
-        'results': 5
+        'distance': distance,
+        'results': results,
+        'keys': json.dumps([query[1] for query in queries])
     }
 
-    time = 0
+    r = s.get(url, params=req_params)
+    time = (r.elapsed.microseconds / 1000)
 
-    for i, query in enumerate(queries):
-        correct, queried = query
-        req_params['key'] = queried
-        r = s.get(url, params=req_params)
-        if r.status_code != 200:
-            print(r, r.text)
-            break
-        time += r.elapsed.microseconds
-        pbar.update(i)
-    pbar.finish()
-    print("Average time for a get request with {0} keys datastore is {1} miliseconds".format(
-        len(keys), time / (len(queries) * 1000)))
+    result = json.loads(r.text)
+    accuracy = 0
+    for c, r in zip([query[0] for query in queries], result):
+        try:
+            index = r.index(c)
+            accuracy += (len(r) - index) / len(r)
+        except Exception as e:
+            accuracy += 0
+
+    stats = {
+        'time': time,
+        'keys': len(keys),
+        'queries': len(queries),
+        'accuracy': accuracy / len(queries),
+        'batch_size': batch_size,
+        'batch_time': batch_time,
+        'batch_total': batch_total,
+        'distance': distance,
+        'results': results,
+    }
+
+    print(json.dumps(stats), file=sys.stderr)
 
 
 if __name__ == '__main__':

@@ -2,14 +2,17 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/vlad-doru/fuzzyguy/fuzzy"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 var stores map[string]*fuzzy.FuzzyService = make(map[string]*fuzzy.FuzzyService)
@@ -58,6 +61,9 @@ func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
 			ParameterError(w, "key (Existent)")
 			return
 		}
+		application_stats.mutex.Lock()
+		application_stats.Stores[parameters["store"]].Queries["GET Excat"] += 1
+		application_stats.mutex.Unlock()
 		fmt.Fprintf(w, value)
 		return
 	}
@@ -72,6 +78,9 @@ func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
 	json_response, _ := json.Marshal(fuzzy_results)
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, string(json_response))
+	application_stats.mutex.Lock()
+	application_stats.Stores[parameters["store"]].Queries["GET Fuzzy"] += 1
+	application_stats.mutex.Unlock()
 }
 
 func NewStoreHandler(w http.ResponseWriter, r *http.Request) {
@@ -87,8 +96,12 @@ func NewStoreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stores[parameters["store"]] = fuzzy.NewFuzzyService()
+	application_stats.Stores[parameters["store"]] = StoreStatistics{map[string]int{"POST": 1}}
 	fmt.Fprintf(w, "Store has successfully been created")
 	w.WriteHeader(http.StatusCreated)
+	application_stats.mutex.Lock()
+	application_stats.Stores[parameters["store"]].Queries["POST NewStore"] += 1
+	application_stats.mutex.Unlock()
 }
 
 func AddKeyValueHandler(w http.ResponseWriter, r *http.Request) {
@@ -105,10 +118,13 @@ func AddKeyValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	store.Set(parameters["key"], parameters["value"])
 	fmt.Fprintf(w, "Successfully set the key")
+	application_stats.mutex.Lock()
+	application_stats.Stores[parameters["store"]].Queries["PUT AddKey"] += 1
+	application_stats.mutex.Unlock()
 }
 
 func DeleteKeyHandler(w http.ResponseWriter, r *http.Request) {
-	parameters, valid := RequireParameters([]string{"store", "key"}, w, r)
+	parameters, valid := RequireParameters([]string{"store"}, w, r)
 	if !valid {
 		return
 	}
@@ -119,9 +135,22 @@ func DeleteKeyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	/* If there is no key parameter delete the entire collection */
+	key := r.FormValue("key")
+	if len(key) == 0 {
+		delete(stores, parameters["store"])
+		application_stats.mutex.Lock()
+		delete(application_stats.Stores, parameters["store"])
+		application_stats.mutex.Unlock()
+		return
+	}
+
 	deleted := store.Delete(parameters["key"])
 	if deleted {
 		fmt.Fprintf(w, "Successfully deleted the key")
+		application_stats.mutex.Lock()
+		application_stats.Stores[parameters["store"]].Queries["DELETE Key"] += 1
+		application_stats.mutex.Unlock()
 	} else {
 		http.Error(w, "The key you deleted does not exist", http.StatusBadRequest)
 	}
@@ -147,6 +176,91 @@ func FuzzyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GetKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
+	parameters, valid := RequireParameters([]string{"store", "keys", "distance"}, w, r)
+	if !valid {
+		return
+	}
+
+	store, present := stores[parameters["store"]]
+	if !present {
+		ParameterError(w, "store")
+		return
+	}
+
+	/* We always require a distance parameter in order to make every request more explicit
+	   about whether we would like to perform and exact match or an approximate one */
+
+	distance, err := strconv.Atoi(parameters["distance"])
+	if err != nil {
+		ParameterError(w, "distance (numeric)")
+		return
+	}
+
+	/* We unmarshall the list of keys */
+	var keys []string
+	err = json.Unmarshal([]byte(parameters["keys"]), &keys)
+	if err != nil {
+		ParameterError(w, "keys (JSON)")
+		return
+	}
+
+	result := make([]string, len(keys))
+
+	/* We treat exact matching here */
+	if distance == 0 {
+		for i, key := range keys {
+			value, present := store.Get(key)
+			if present {
+				result[i] = value
+			}
+		}
+		application_stats.mutex.Lock()
+		application_stats.Stores[parameters["store"]].Queries["GET Batch"] += 1
+		application_stats.mutex.Unlock()
+		json_response, _ := json.Marshal(result)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, string(json_response))
+		return
+	}
+
+	/* Approximate matching here */
+	results, err := strconv.Atoi(r.FormValue("results"))
+	if err != nil {
+		ParameterError(w, "results")
+		return
+	}
+
+	c := make(chan struct {
+		string
+		int
+	})
+
+	for i, key := range keys {
+		go func(key string, i int) {
+			fuzzy_results := store.Query(key, distance, results)
+			json_response, _ := json.Marshal(fuzzy_results)
+			c <- struct {
+				string
+				int
+			}{string(json_response), i}
+		}(key, i)
+	}
+
+	for steps := 0; steps < len(keys); steps++ {
+		s := <-c
+		key, i := s.string, s.int
+		result[i] = key
+	}
+
+	json_response, _ := json.Marshal(result)
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, string(json_response))
+	application_stats.mutex.Lock()
+	application_stats.Stores[parameters["store"]].Queries["GET Batch"] += 1
+	application_stats.mutex.Unlock()
+}
+
 func AddBatchKeyValueHandler(w http.ResponseWriter, r *http.Request) {
 	parameters, valid := RequireParameters([]string{"store", "dictionary"}, w, r)
 	if !valid {
@@ -169,13 +283,18 @@ func AddBatchKeyValueHandler(w http.ResponseWriter, r *http.Request) {
 	for key, value := range dict {
 		store.Set(key, value)
 	}
-
+	application_stats.mutex.Lock()
+	application_stats.Stores[parameters["store"]].Queries["PUT Batch"] += 1
+	application_stats.mutex.Unlock()
 	fmt.Fprintf(w, "Successfully set the keys")
 }
 
 func BatchHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
+	case "GET":
+		GetKeyBatchHandler(w, r)
+		return
 	case "PUT":
 		AddBatchKeyValueHandler(w, r)
 		return
@@ -207,11 +326,57 @@ func EnglishHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	reader := bufio.NewScanner(file)
 
-	store, _ := stores["english"]
+	store, _ := stores["demostore"]
 	for reader.Scan() {
 		split := strings.Split(reader.Text(), "\t")
 		store.Set(split[0], split[1])
 	}
+}
+
+type StoreStatistics struct {
+	Queries map[string]int
+}
+
+type Statistics struct {
+	Stores map[string]StoreStatistics
+	mutex  *sync.RWMutex
+}
+
+var application_stats = Statistics{make(map[string]StoreStatistics), new(sync.RWMutex)}
+
+func StatsHandler(w http.ResponseWriter, r *http.Request) {
+
+	json_response, err := json.Marshal(application_stats)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	}
+	fmt.Fprintf(w, string(json_response))
+	w.Header().Set("Content-Type", "application/json")
+
+}
+
+func DemoTestHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+	parameters, valid := RequireParameters([]string{"testsize", "distance", "results"}, w, r)
+	if !valid {
+		return
+	}
+	cmd := exec.Command("python", "test/test.py", parameters["testsize"], parameters["distance"], parameters["results"])
+	var out bytes.Buffer
+	cmd.Stderr = &out
+	err := cmd.Run()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Fprintf(w, out.String())
+	w.Header().Set("Content-Type", "application/json")
+
 }
 
 type Configuration struct {
@@ -256,6 +421,12 @@ func main() {
 	http.HandleFunc("/demo/monitor", MonitorHandler)
 	// Demo load english dictionary
 	http.HandleFunc("/demo/loadenglish", EnglishHandler)
+
+	// Statistics handler for our service
+	http.HandleFunc("/stats", StatsHandler)
+
+	// Test handler for our service
+	http.HandleFunc("/demo/test", DemoTestHandler)
 
 	http.ListenAndServe(fmt.Sprintf(":%s", configuration.Port), nil)
 }

@@ -187,6 +187,28 @@ func BenchmarkParallelServiceQuery(b *testing.B) {
 	b.StopTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+	queries, _, service := LoadTestSet("data/testset_300000.dat")
+
+	c := make(chan bool)
+
+	for i := 0; i < b.N; i++ {
+		b.StartTimer()
+		for _, query := range queries {
+			go func(query string) {
+				service.Query(query, 3, 5)
+				c <- true
+			}(query)
+		}
+		for j := 0; j < len(queries); j++ {
+			<-c
+		}
+	}
+}
+
+func BenchmarkAccuracyServiceQuery(b *testing.B) {
+	b.StopTimer()
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	queries, correct, service := LoadTestSet("data/testset_300000.dat")
 
 	var accuracy float32 = 0
@@ -214,7 +236,6 @@ func BenchmarkParallelServiceQuery(b *testing.B) {
 		}
 	}
 	fmt.Printf("Accuracy of testset \t %f\n------------\n", accuracy/float32(len(queries)))
-
 }
 
 func BenchmarkSequentialServiceQuery(b *testing.B) {

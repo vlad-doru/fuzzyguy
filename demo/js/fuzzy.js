@@ -1,6 +1,6 @@
 $(document).ready(function(){
-		var serviceURL = "fuzzy?store=english&distance=3&results=5&key="
-		var exactURL = "fuzzy?store=english&distance=0&key="
+		var serviceURL = "fuzzy?store=demostore&distance=3&results=5&key="
+		var exactURL = "fuzzy?store=demostore&distance=0&key="
 		var fuzzyURL = "fuzzy"
 		
 		var input = $("#english")
@@ -11,7 +11,7 @@ $(document).ready(function(){
 		$.ajax({
 			"url":fuzzyURL,
 			"type": 'POST',
-			"data": {"store": "english"}
+			"data": {"store": "demostore"}
 		});
 
 		input.autocomplete({
@@ -21,7 +21,7 @@ $(document).ready(function(){
 				$.getJSON(url, response);
 			}
     	});
-    	input.on('keyup', function(){
+    	input.on('change paste keyup', function(){
     		var url = exactURL + input.val()
     		url = encodeURI(url)
     		$.ajax({
@@ -47,7 +47,7 @@ $(document).ready(function(){
     		var dict = {
     			key: key,
     			value: value,
-    			store: "english"
+    			store: "demostore"
     		}
     		$.ajax({
    				"url":fuzzyURL,
