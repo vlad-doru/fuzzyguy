@@ -7,6 +7,7 @@ import (
 	"github.com/vlad-doru/fuzzyguy/server"
 	"net/http"
 	"os"
+	"runtime"
 )
 
 type Configuration struct {
@@ -33,6 +34,8 @@ func main() {
 	if configuration == nil {
 		return
 	}
+	// We set the maximum number of cores to be used
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// API Handlers
 	http.HandleFunc("/fuzzy", server.FuzzyHandler)

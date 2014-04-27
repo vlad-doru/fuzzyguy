@@ -74,8 +74,9 @@ func NewStoreHandler(w http.ResponseWriter, r *http.Request) {
 	Fuzzy.stats_lock.Unlock()
 	IncrementStats(parameters["store"], "/fuzzy POST")
 
-	fmt.Fprintf(w, "Store has successfully been created")
 	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "Store has successfully been created")
+
 }
 
 func AddKeyValueHandler(w http.ResponseWriter, r *http.Request) {

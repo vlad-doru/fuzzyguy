@@ -82,17 +82,24 @@ def main():
             accuracy += 0
 
     stats = {
-        'time': time,
+        'time': round(time),
         'keys': len(keys),
         'queries': len(queries),
-        'accuracy': accuracy / len(queries),
+        'accuracy': round((accuracy * 100) / len(queries), 2),
         'batch_size': batch_size,
-        'batch_time': batch_time,
-        'batch_total': batch_total,
+        'batch_time': round(batch_time / 1000),
+        'batch_total': round(batch_total / 1000),
         'distance': distance,
         'results': results,
+        'throughput': round((1000 / time) * len(queries))
     }
 
+    # We must delete the database
+    url = 'http://localhost:8080/fuzzy'
+    req_params = {
+        'store': 'fuzzytest'
+    }
+    r = s.delete(url, params=req_params)
     print(json.dumps(stats), file=sys.stderr)
 
 
