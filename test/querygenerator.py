@@ -51,8 +51,8 @@ def alter_queries(queries, f):
     mistakes_probs = {
         insert: 0.44,
         delete: 0.28,
-        subsititute: 0.26,
-        transposition: 0.02
+        subsititute: 0.28,
+        # transposition: 0.02
     }
 
     distance_gen = discrete_gen(distance_probs)
@@ -124,7 +124,7 @@ def generate_queries(vocabulary, size):
 
 def main():
     vocabulary = load_vocabulary("data/english.txt")
-    for size in [5000, 50000, 100000, 200000, 300000]:
+    for size in [5000, 50000, 100000, 200000, 300000, 500000]:
         generate_queries(vocabulary, size)
 
 if __name__ == '__main__':

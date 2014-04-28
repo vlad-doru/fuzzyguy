@@ -126,8 +126,10 @@ func TestFuzzyService(t *testing.T) {
 	}
 }
 
+var test_file string = "../test/data/testset_200000.dat"
+
 func TestConcurrencyFuzzyService(t *testing.T) {
-	queries, _, service := LoadTestSet("data/testset_100000.dat")
+	queries, _, service := LoadTestSet(test_file)
 	service = NewFuzzyService()
 
 	barrier := make(chan bool)
@@ -187,7 +189,7 @@ func BenchmarkParallelServiceQuery(b *testing.B) {
 	b.StopTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	queries, _, service := LoadTestSet("data/testset_300000.dat")
+	queries, _, service := LoadTestSet(test_file)
 
 	c := make(chan bool)
 
@@ -209,7 +211,7 @@ func BenchmarkAccuracyServiceQuery(b *testing.B) {
 	b.StopTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	queries, correct, service := LoadTestSet("data/testset_300000.dat")
+	queries, correct, service := LoadTestSet(test_file)
 
 	var accuracy float32 = 0
 	c := make(chan float32)

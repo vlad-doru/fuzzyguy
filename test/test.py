@@ -50,13 +50,13 @@ def main():
 
         r = s.put(url, req_params)
         i += 1
-        time += r.elapsed.microseconds
+        time += (r.elapsed.seconds * 1000000) + r.elapsed.microseconds
 
         if r.status_code != 200:
             print(r.status_code, r.text)
             break
 
-    batch_time = time / (i * 1000)
+    batch_time = time / (len(keys) / batch_size)
     batch_total = time
 
     distance = sys.argv[2]
@@ -70,7 +70,9 @@ def main():
     }
 
     r = s.get(url, params=req_params)
-    time = (r.elapsed.microseconds / 1000)
+    micro = r.elapsed.microseconds / 1000
+    seconds = r.elapsed.seconds
+    time = 1000 * seconds + micro
 
     result = json.loads(r.text)
     accuracy = 0
@@ -91,7 +93,7 @@ def main():
         'batch_total': round(batch_total / 1000),
         'distance': distance,
         'results': results,
-        'throughput': round((1000 / time) * len(queries))
+        'throughput': round((1000 / (time)) * len(queries))
     }
 
     # We must delete the database

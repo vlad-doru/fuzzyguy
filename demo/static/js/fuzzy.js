@@ -1,5 +1,5 @@
 $(document).ready(function(){
-		var serviceURL = "fuzzy?store=demostore&distance=3&results=5&key="
+		var serviceURL = "fuzzy?store=demostore&distance=2&results=5&key="
 		var exactURL = "fuzzy?store=demostore&distance=0&key="
 		var fuzzyURL = "fuzzy"
 		
