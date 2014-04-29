@@ -123,7 +123,7 @@ def generate_queries(vocabulary, size):
 
 
 def main():
-    vocabulary = load_vocabulary("data/english.txt")
+    vocabulary = load_vocabulary("data/french.txt")
     for size in [5000, 50000, 100000, 200000, 300000, 500000]:
         generate_queries(vocabulary, size)
 
