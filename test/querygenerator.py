@@ -43,16 +43,16 @@ def alter_queries(queries, f):
         return x[:index] + x[index + 1] + x[index] + x[index + 2:]
 
     distance_probs = {
-        1: 0.63,
-        2: 0.21,
-        3: 0.16,
+        1: 0.53,
+        2: 0.30,
+        3: 0.17,
     }
 
     mistakes_probs = {
         insert: 0.44,
         delete: 0.28,
-        subsititute: 0.28,
-        # transposition: 0.02
+        subsititute: 0.24,
+        # transposition: 0.06
     }
 
     distance_gen = discrete_gen(distance_probs)
@@ -81,7 +81,7 @@ def alter_queries(queries, f):
 
 
 def generate_queries(vocabulary, size):
-    lengths = numpy.abs(numpy.random.normal(10, 5, size))
+    lengths = numpy.abs(numpy.random.normal(12, 6, size))
     words_set = []
 
     filename = "data/testset_{0}.dat".format(size)

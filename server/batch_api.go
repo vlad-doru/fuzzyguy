@@ -66,13 +66,13 @@ func GetKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	for i, key := range keys {
-		go func(key string, i int) {
-			fuzzy_results := store.Query(key, distance, results)
+		go func(k string, j int) {
+			fuzzy_results := store.Query(k, distance, results)
 			json_response, _ := json.Marshal(fuzzy_results)
 			c <- struct {
 				string
 				int
-			}{string(json_response), i}
+			}{string(json_response), j}
 		}(key, i)
 	}
 
