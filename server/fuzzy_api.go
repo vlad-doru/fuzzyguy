@@ -3,7 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vlad-doru/fuzzyguy/fuzzy"
+	"../fuzzy"
 	"net/http"
 	"strconv"
 )
@@ -105,12 +105,12 @@ func DeleteKeyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	store, present := GetStore(parameters["store"])
 	if !present {
 		ParameterError(w, "store (existent)")
 		return
 	}
-
 	/* If there is no key parameter delete the entire collection */
 	key := r.FormValue("key")
 	if len(key) == 0 {

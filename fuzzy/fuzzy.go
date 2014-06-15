@@ -2,7 +2,7 @@ package fuzzy
 
 import (
 	"container/heap"
-	"github.com/vlad-doru/fuzzyguy/levenshtein"
+	"../levenshtein"
 	"sort"
 	"sync"
 )

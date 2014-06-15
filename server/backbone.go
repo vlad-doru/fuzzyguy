@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/vlad-doru/fuzzyguy/fuzzy"
+	"../fuzzy"
 	"sync"
 )
 

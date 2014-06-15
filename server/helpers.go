@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"github.com/vlad-doru/fuzzyguy/fuzzy"
+	"../fuzzy"
 	"net/http"
 )
 
