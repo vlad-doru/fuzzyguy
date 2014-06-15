@@ -126,7 +126,7 @@ func TestFuzzyService(t *testing.T) {
 	}
 }
 
-var test_file string = "../test/data/testset_300000.dat"
+var test_file string = "../test/data/testset_50000.dat"
 
 func TestConcurrencyFuzzyService(t *testing.T) {
 	queries, _, service := LoadTestSet(test_file)
@@ -244,7 +244,7 @@ func BenchmarkSequentialServiceQuery(b *testing.B) {
 	b.StopTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	queries, correct, service := LoadTestSet("data/testset_300000.dat")
+	queries, correct, service := LoadTestSet(test_file)
 	var accuracy float32 = 0
 
 	b.StartTimer()

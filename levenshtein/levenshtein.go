@@ -125,9 +125,10 @@ func ComputeHistogram(s string) uint32 {
    and then adds length_diff to that difference then divides that by 2 */
 func LowerBound(histogram_source, histogram_target uint32, length_diff int) int {
 	diff := histogram_target ^ histogram_source
-	diff -= ((diff >> 1) & 0x55555555)
-	diff = (diff & 0x33333333) + ((diff >> 2) & 0x33333333)
-	return (int((((diff+(diff>>4))&0x0F0F0F0F)*0x01010101)>>24) + length_diff) >> 1
+	diff = diff - ((diff >> 1) & 0x55555555)
+    diff = (diff & 0x33333333) + ((diff >> 2) & 0x33333333)
+    diff = (((diff + (diff >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24
+	return ((int)(diff) + length_diff) >> 1
 }
 
 /* Here we compute an extended histogram which allows us to have a better filter

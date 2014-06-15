@@ -198,7 +198,7 @@ func TestLowerBound(t *testing.T) {
 				testCase.source,
 				"and",
 				testCase.target,
-				"computed as",
+				"with length_diff 1 computed as",
 				distance,
 				", should be",
 				testCase.distance)
