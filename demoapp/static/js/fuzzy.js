@@ -114,6 +114,7 @@ $(document).ready(function() {
 
     var computeHist = function(id) {
         w = $("#word" + id).val()
+        word.fadeIn()
         for (var i = 0; i < w.length; i++) {
             sleep(i * charduration, function(j) {
                 var prefix = w.substring(0, j)
@@ -124,10 +125,14 @@ $(document).ready(function() {
                 hash.html(code + "(" + w[j] + ") % 32 = " + (bucket))
                 var cell = $(values[bucket])
                 var add_to = parseInt(cell.text())
-                cell.css('background-color', '#5bc0de')
+                cell.animate({
+                    'background-color': '#5bc0de'
+                }, 700)
                 cell.text((add_to + 1) % 2)
                 setTimeout(function() {
-                    cell.css('background-color', 'transparent')
+                    cell.animate({
+                        'background-color': 'transparent'
+                    }, 700);
                 }, 1500)
             }, i)
         }
@@ -139,7 +144,7 @@ $(document).ready(function() {
                 hist += cell.text()
                 cell.text("0")
             }
-            $("#hist" + id).text(hist)
+            $("#hist" + id).hide().text(hist).slideDown()
             hash.html("&zwnj;")
         }, w.length * charduration)
     }
@@ -157,10 +162,11 @@ $(document).ready(function() {
         }, ($("#word1").val().length + 1) * charduration);
         setTimeout(function() {
             $("#x1").html($("#hist1").text())
-            $("#x1").fadeTo(600, 0.8)
+            $("#x1").slideDown()
             setTimeout(function() {
                 $("#x2").html($("#hist2").text())
-                $("#x2").fadeTo(600, 0.8)
+                $("#x2").slideDown()
+                word.slideUp()
             }, 1000)
             setTimeout(function() {
                 var dif = 0

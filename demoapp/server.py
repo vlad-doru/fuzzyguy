@@ -16,10 +16,10 @@ if __name__ == '__main__':
     options = argumentParse()
     app.run()
 
-    # try:
-    #     d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
-    #     server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', options.port), d)
-    #     server.start()
-    # except KeyboardInterrupt:
-    #     print 'You stopped the demo app.'
-    #     server.stop()
+    try:
+        d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
+        server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', options.port), d)
+        server.start()
+    except KeyboardInterrupt:
+        print 'You stopped the demo app.'
+        server.stop()
