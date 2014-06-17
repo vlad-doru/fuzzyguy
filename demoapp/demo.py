@@ -121,3 +121,7 @@ def test():
 @app.route("/monitor")
 def monitor():
     return app.send_static_file('monitor.html')
+
+@app.route("/profiler")
+def profiler():
+    return app.send_static_file('profiler.html')
