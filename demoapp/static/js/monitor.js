@@ -61,7 +61,7 @@ var performance_options = {
     hAxis: {
         title: 'Dimensiune date',
         minValue: 0,
-        maxValue: 600000
+        // maxValue: 600000
     },
     vAxis: {
         title: 'Performanta (ms)',

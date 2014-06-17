@@ -91,8 +91,8 @@
                         <div class="row col-sm-12">
                             <strong>Aplicația demonstrativă</strong>
                             (Python)
-                        </div>                    
-                        
+                        </div>
+
                     </div>
                     <div class="col-sm-2">
                     <p class="text-center">
@@ -102,9 +102,9 @@
                         <div class="row">
                             <h4>HTTP</h4>
                             [REST]
-                        </div>                        
+                        </div>
                     </p>
-                        
+
                     </div>
                     <div class="col-sm-4">
                         <div class="row col-sm-6 col-sm-offset-3" style="padding-bottom:10px">
@@ -113,11 +113,11 @@
                         <div class="row col-sm-12">
                             <strong>Serviciul dezvoltat</strong>
                             (Golang)
-                        </div> 
+                        </div>
                     </div>
                 </div>
                 <hr/>
-                
+
 
 				<div class="row">
                 	<form role="form" id="addword">
@@ -143,16 +143,16 @@
 				<button id="loadenglish" class="ladda-button btn btn-info zoom-in"><span class="ladda-label">Încarcă dicționarul</span></button>
 				<div id="engsuccess" style="display:none">
 					<br>
-					<p class="alert alert-success" style="font-size:14px">Au fost adaugate datele din dictionar cu succes.</p>	            	
+					<p class="alert alert-success" style="font-size:14px">Au fost adaugate datele din dictionar cu succes.</p>
 	            </div>
                 <div id="clearsuccess" style="display:none">
                     <br>
-                    <p class="alert alert-success" style="font-size:14px">Au fost reintializat cu succes pachetul folosit de aplicatie</p>                  
+                    <p class="alert alert-success" style="font-size:14px">Au fost reintializat cu succes pachetul folosit de aplicatie</p>
                 </div>
 
                 <hr>
                 <p>Se va observa viteza pe care aplicația o are folosind serviciul construit.</p>
-				
+
 
 
                 <div class="row">
@@ -160,11 +160,11 @@
 	                	<div class="form-group">
 	                	<input type="text" id="english" class="form-control">
 	                	</div>
-	            	</form> 
+	            	</form>
 	            	<div class="col-sm-7" id="definition" style="text-algin:left; border-left:2px solid white;min-height:35px"></div>
                 </div>
-                            
-				
+
+
             </div>
         </div>
     </section>
@@ -175,7 +175,7 @@
                 <div class="col-lg-8 col-lg-offset-2">
                     <h2>Explicații</h2>
                     <p>Servicul a fost scris folosind limbajul de programare Go deoarece acesta permite dezvoltarea cu ușurință a programelor rapide, și care folosesc intensiv capacitatea procesoarelor moderne de a paraleliza execuția.</p>
-                    
+
 
                     <p>O primă funcție de hash are rolul de a număra paritatea caracterelor ce sunt mapate către o anumită valoare în intervalul 0-31.</p>
 
@@ -194,7 +194,7 @@
                         <span id="x1" style="font-weight:bold;font-size:0.8em;display:none">10001</span>
                         <br/>
                         <span id="x2" style="font-weight:bold;font-size:0.8em;display:none">11001</span>
-                    </p>					            
+                    </p>
                     <div id="word" class="row"><strong style="font-size:20px; display:none">&zwnj;</strong></div>
 					<hr>
 
@@ -214,7 +214,7 @@
                     <div id="hash" class="row">
                     	&zwnj;
                     </div>
-                    
+
 
                     <p>Se calculează apoi o limită inferioară pentru distanța Levenshtein între două șiruri de caractere, aceasta fiind dată de suma numărului de biți diferiti din cele două histograme și diferenta lunigimilor termenilor, împarțită la 2.</p>
 
@@ -230,13 +230,14 @@
             <div class="col-lg-8 col-lg-offset-2">
                 <h2>Performanțe</h2>
                 <p>Serviciul permite monitorizarea performanțelor acestui printr-o interfață grafică. Aceasta oferă statistici legate de acuratețea pe care o poate atinge serviciul în încercarea de a rezolva problema interogării aproximative, dar și de eficiența produsului dezvoltat.</p>
-                <p>Codul serviciului se poate gasi pe GitHub alaturi de documentatia API-ului sau</p>
+                <p>Serviciul este unul open-source, iar codul acestuia se poate găsi pe GitHub alături de documentația API-ului.</p>
                 <ul class="list-inline">
                 	<li><a href="/monitor" class="btn btn-info btn-lg"><i class="fa fa-bar-chart-o"></i> <span >Performanțe</span></a>
                     </li>
                     <li><a href="https://github.com/vlad-doru/fuzzyguy" class="btn btn-info btn-lg"><i class="fa fa-github fa-fw"></i> <span >Github</span></a>
                     </li>
                 </ul>
+                <hr/>
             </div>
         </div>
     </section>
