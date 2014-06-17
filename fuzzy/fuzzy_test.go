@@ -126,7 +126,7 @@ func TestFuzzyService(t *testing.T) {
 	}
 }
 
-var test_file string = "../test/data/testset_50000.dat"
+var test_file string = "../test/data/testset_300000.dat"
 
 func TestConcurrencyFuzzyService(t *testing.T) {
 	queries, _, service := LoadTestSet(test_file)
