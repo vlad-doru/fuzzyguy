@@ -1,3 +1,4 @@
+#!/usr/bin/python2.7
 """We use a stable webserver environment for production """
 
 from cherrypy import wsgiserver
@@ -14,7 +15,6 @@ def argumentParse():
 
 if __name__ == '__main__':
     options = argumentParse()
-    app.run()
 
     try:
         d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
