@@ -25,6 +25,7 @@ def cleardemo():
         "store": "demostore"
     }
     r = session.delete(url, params=params)
+    r = session.post(url, params=params)
     return "Successfully deleted"
 
 
