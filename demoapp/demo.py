@@ -1,9 +1,8 @@
-"""This app has the sole purpose of providing a user friendly interface
+"""This APP has the sole purpose of providing a user friendly interface
 for the user to interact with the fuzzyguy service which is in fact
 a command-line webserver designed for fast fuzzy queries"""
 
 import traceback
-import sys
 import requests
 import json
 
@@ -11,60 +10,62 @@ from flask import Flask
 from flask import request
 from test import test_service
 
-app = Flask(__name__, static_url_path='/static')
+APP = Flask(__name__, static_url_path='/static')
 
 # We make this kind of global varaible in order to speed up the
-# communication between the app and the server
-session = requests.Session()
+# communication between the APP and the server
+SESSION = requests.Session()
 
 
-@app.route("/fuzzy/cleardemo")
+@APP.route("/fuzzy/cleardemo")
 def cleardemo():
+    """ We remove the demostore from the service """
     url = "http://localhost:8080/fuzzy"
     params = {
         "store": "demostore"
     }
-    r = session.delete(url, params=params)
-    r = session.post(url, params=params)
+    SESSION.delete(url, params=params)
+    SESSION.post(url, params=params)
     return "Successfully deleted"
 
 
-@app.route("/fuzzy/loadenglish")
+@APP.route("/fuzzy/loadenglish")
 def load_english():
-    with open("data/english.dat") as f:
+    """ We load the english dictionary and place it in the demo store """
+    with open("data/english.dat") as eng_file:
         url = "http://localhost:8080/fuzzy"
         params = {
             "store": "demostore"
         }
-        r = session.delete(url, params=params)
-        r = session.post(url, params)
+        res = SESSION.delete(url, params=params)
+        res = SESSION.post(url, params)
 
-        if r.status_code != 201:
-            response.status_code = r.status_code
-            return "Error on creating the store"
+        if res.status_code != 201:
+            return "Error on creating the store", res.status_code
 
         batch = {}
 
-        for line in f:
+        for line in eng_file:
             word, defintion = line.split('\t')
             batch[word] = defintion
             if len(batch) == 1000:
                 try:
-                    r = session.put("http://localhost:8080/fuzzy/batch", params={
-                        "store": "demostore",
-                        "dictionary": json.dumps(batch)
-                    })
-                    if r.status_code != 200:
-                        response.status_code = r.status_code
-                        return "Error on putting the key-value batch"
-                except Exception, e:
-                    print e
+                    res = SESSION.put("http://localhost:8080/fuzzy/batch",
+                                    params={
+                                        "store": "demostore",
+                                        "dictionary": json.dumps(batch)
+                                    })
+                    if res.status_code != 200:
+                        return "Error on pute key-value batch", res.status_code
+                except Exception:
+                    pass
                 batch = {}
 
     return "Successfully loaded the dictionary"
 
 
 def query_service(distance):
+    """ We query the service through the API """
     url = "http://localhost:8080/fuzzy"
     params = {
         "store": "demostore",
@@ -72,41 +73,45 @@ def query_service(distance):
         "results": "5",
         "key": request.args.get('key'),
     }
-    r = session.get(url, params=params)
-    if r.status_code != 200:
-        response.status_code = r.status_code
-        return "Error while quering the service"
-    return r.text
+    res = SESSION.get(url, params=params)
+    if res.status_code != 200:
+        return "Error while quering the service", res.status_code
+    return res.text
 
 
-@app.route("/fuzzy/query")
+@APP.route("/fuzzy/query")
 def query():
+    """ We query at a distance of 2 """
     return query_service(2)
 
 
-@app.route("/fuzzy/exact")
+@APP.route("/fuzzy/exact")
 def exact():
+    """ We make exact queries """
     return query_service(0)
 
 
-@app.route("/fuzzy/add", methods=['PUT'])
+@APP.route("/fuzzy/add", methods=['PUT'])
 def add():
+    """ We add a key-value pair """
     url = "http://localhost:8080/fuzzy"
     try:
-        r = session.put(url, params=request.form)
-    except Exception, e:
-        print e
+        res = SESSION.put(url, params=request.form)
+    except Exception:
+        pass
 
-    return r.text
+    return res.text
 
 
-@app.route("/")
+@APP.route("/")
 def index():
-    return app.send_static_file('index.html')
+    """ We send the demo main page """
+    return APP.send_static_file('index.html')
 
 
-@app.route("/fuzzy/test")
+@APP.route("/fuzzy/test")
 def test():
+    """ We benchmark the service """
     try:
         size = request.args["testsize"]
         results = request.args["results"]
@@ -114,15 +119,17 @@ def test():
 
         return test_service(size, distance, results)
 
-    except Exception, e:
-        print e
+    except Exception:
         print traceback.format_exc()
 
 
-@app.route("/monitor")
+@APP.route("/monitor")
 def monitor():
-    return app.send_static_file('monitor.html')
+    """ We return the statis file corresponding for testing """
+    return APP.send_static_file('monitor.html')
 
-@app.route("/profiler")
+
+@APP.route("/profiler")
 def profiler():
-    return app.send_static_file('profiler.html')
+    """ We serve the profiler html """
+    return APP.send_static_file('profiler.html')
