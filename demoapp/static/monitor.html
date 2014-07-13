@@ -33,23 +33,24 @@
       <!-- Main jumbotron for a primary marketing message or call to action -->
       <div class="jumbotron">
         <div class="container">
-          <h1>Monitorizare</h1>
-          <p>Puteți testa performanța serviciul pe seturi de date de dimensiuni variabile. Se va putea observa variația performanței în funcție de opțiunile de testare alese</p>
+          <h1>Monitoring</h1>
+          <p>You can execute various tests to see how different parameters
+            affect the performance of the service.</p>
           <hr>
-          <p>Puteți observa mai jos o diagramă a apelurilor funcțiilor ce au loc la rularea unui set de teste.</p>
-          <a target="new" href="/profiler" class="btn btn-primary">Graful funcțiilor</a>
+          <p>You can check out the profiling graph of the FuzzyGuy service.</p>
+          <a target="new" href="/profiler" class="btn btn-primary">Profiling Graph</a>
         </div>
       </div>
       <div class="container">
         <!-- Example row of columns -->
         <div class="row">
           <div class="col-sm-12">
-            <h2>Opțiuni testare</h2>
+            <h2>Testing options</h2>
             <form id="test" role="form">
               <div class="row">
                 <div class="form-group col-sm-4">
                   <label for="testsize">
-                    Dimensiunea setului de date
+                    Test Size
                   </label>
                   <select name="testsize" id="testsize" class="form-control">
                     <option value="5000">5.000</option>
@@ -61,17 +62,17 @@
                   </select>
                 </div>
                 <div class="form-group col-sm-4">
-                  <label for="distance">Distanța Levenshtein</label>
+                  <label for="distance"> Levenshtein Distance</label>
                   <input type="number" min="1" max="3" class="form-control" value="3" name="distance" id="distance">
                 </div>
                 <div class="form-group col-sm-4">
-                  <label for="results">Număr maxim de rezultate</label>
+                  <label for="results">Maximum results set size</label>
                   <input type="number" min="0" max="10" class="form-control" value="5" name="results" id="results">
                 </div>
               </div>
-              <small class="text-small col-sm-12 text-center" id="warning" style="display:none">Aveti rabdare. Testarea poate dura cateva secunde...</small>
+              <small class="text-small col-sm-12 text-center" id="warning" style="display:none">Please be patient.. Testing may take a few seconds</small>
               <button type="submit" class="btn btn-default col-sm-6 col-sm-offset-3" style="position:relative">
-              Testează serviciul
+              Test the service
               <div class="spinner paused">
               </div>
               </button>
@@ -82,31 +83,31 @@
         <hr/>
         <div class="row">
           <div class="col-sm-6" id="set" style="display:none">
-            <h4>Ultimul set de teste</h4>
+            <h4>Test results</h4>
             <div class="row">
-              <strong class="col-sm-9">Dimensiune date (chei)</strong><span class="col-sm-3" id="keys"></span>
+              <strong class="col-sm-9">Number of keys</strong><span class="col-sm-3" id="keys"></span>
             </div>
             <div class="row">
-              <strong class="col-sm-9">Timp Initializare Batch (ms)</strong><span class="col-sm-3" id="batch_time"> </span>
+              <strong class="col-sm-9">Batch initialization (ms)</strong><span class="col-sm-3" id="batch_time"> </span>
             </div>
             <div class="row">
-              <strong class="col-sm-9">Dimensiune Batch-uri (chei)</strong><span class="col-sm-3" id="batch_size"> </span>
+              <strong class="col-sm-9">Batch size (chei)</strong><span class="col-sm-3" id="batch_size"> </span>
             </div>
             <div class="row">
-              <strong class="col-sm-9">Total initializare (ms)</strong><span class="col-sm-3" id="batch_total"></span>
+              <strong class="col-sm-9">Total initialization (ms)</strong><span class="col-sm-3" id="batch_total"></span>
             </div>
             <div class="row">
-              <strong class="col-sm-9">Acuratete (%)</strong><span class="col-sm-3" id="accuracy"></span>
+              <strong class="col-sm-9">Accuracy (%)</strong><span class="col-sm-3" id="accuracy"></span>
             </div>
             <div class="row">
-              <strong class="col-sm-9">Timp query-uri concurente (ms) </strong><span class="col-sm-3" id="time"></span>
+              <strong class="col-sm-9">Time per query (ms) </strong><span class="col-sm-3" id="time"></span>
             </div>
             <div class="row">
-              <strong class="col-sm-9">Numar query-uri concurente </strong>
+              <strong class="col-sm-9">Number of concurrent queries </strong>
               <span class="col-sm-3" id="queries"></span>
             </div>
             <div class="row">
-              <strong class="col-sm-9">Queryuri pe secunda </strong>
+              <strong class="col-sm-9">Throughput (queries/sec) </strong>
               <span class="col-sm-3" id="throughput"></span>
             </div>
           </div>

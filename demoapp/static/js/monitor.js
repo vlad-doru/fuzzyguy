@@ -31,25 +31,25 @@ var gauge_options = {
 };
 
 var correlation_options = {
-    title: 'Corelatia intre parametrii de interogare si acuratete',
+    title: 'Accuracy and parameters correlation',
     animation: {
         duration: 1000,
         easing: 'out',
     },
     hAxis: {
-        title: 'Distanta Levenshtein',
+        title: 'Levenshtein distance',
         minValue: 0,
         maxValue: 6
     },
     vAxis: {
-        title: 'Acuratete',
+        title: 'Accuracy',
         minValue: 0,
         maxValue: 100
     },
 };
 
 var performance_options = {
-    title: 'Performanta Serviciu',
+    title: 'Performance',
     curveType: 'function',
     legend: {
         position: 'bottom'
@@ -59,12 +59,12 @@ var performance_options = {
         easing: 'out',
     },
     hAxis: {
-        title: 'Dimensiune date',
+        title: 'Test size',
         minValue: 0,
         // maxValue: 600000
     },
     vAxis: {
-        title: 'Performanta (ms)',
+        title: 'Performance (ms)',
         minValue: 0,
     },
     trendlines: {}
@@ -83,7 +83,7 @@ var performance_options = {
         accuracy = new google.visualization.Gauge(document.getElementById('accuracygauge'))
         var data = google.visualization.arrayToDataTable([
             ['Label', 'Value'],
-            ['Acuratete', 0],
+            ['Accuracy', 0],
         ])
         accuracy.draw(data, gauge_options)
     }
@@ -91,10 +91,10 @@ var performance_options = {
 
 function newPerfDataSet(rows) {
     var perfdata = new google.visualization.DataTable();
-    perfdata.addColumn('number', 'Dimensiune')
-    perfdata.addColumn('number', 'Distanta 1')
-    perfdata.addColumn('number', 'Distanta 2')
-    perfdata.addColumn('number', 'Distanta 3')
+    perfdata.addColumn('number', 'Size')
+    perfdata.addColumn('number', 'Distance of 1')
+    perfdata.addColumn('number', 'Distance of 2')
+    perfdata.addColumn('number', 'Distance of 3')
     perfdata.addRows(rows)
     return perfdata
 }
@@ -105,7 +105,7 @@ $(document).ready(function() {
     var warning = $("#warning")
     var set = $("#set")
     var CorrelationData = [
-        ['ID', 'Distanta Levenshtein', 'Acuratete', 'Dimensiune', 'Numar rezultate'],
+        ['ID', 'Levenshtein Distance', 'Accuracy', 'Test size', 'Numer of results'],
     ]
     var PerformanceData = []
     var TestNr = 0
@@ -131,7 +131,7 @@ $(document).ready(function() {
 
                 var datachart = google.visualization.arrayToDataTable([
                     ['Label', 'Value'],
-                    ['Acuratete', data['accuracy']],
+                    ['Accuracy', data['accuracy']],
                 ])
                 accuracy.draw(datachart, gauge_options)
                 $("#accuracygauge").fadeIn()
