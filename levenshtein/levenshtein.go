@@ -1,30 +1,31 @@
 package levenshtein
 
-const HistogramMod = (1 << 5) - 1
+// Number of bits for histogram
+const histogramMod = (1 << 5) - 1
 
-func NewMatrix(dx, dy int) [][]int {
+func newMatrix(dx, dy int) [][]int {
 	m := make([][]int, dx)
-	for i, _ := range m {
+	for i := range m {
 		m[i] = make([]int, dy)
 	}
 	return m
 }
 
-func Max(x, y int) int {
+func max(x, y int) int {
 	if x < y {
 		return y
 	}
 	return x
 }
 
-func Min(x, y int) int {
+func min(x, y int) int {
 	if x < y {
 		return x
 	}
 	return y
 }
 
-func Min3(x, y, z int) int {
+func min3(x, y, z int) int {
 	if x < y && x < z {
 		return x
 	}
@@ -34,50 +35,42 @@ func Min3(x, y, z int) int {
 	return z
 }
 
-func Distance(source, target string) int {
-	source_len, target_len := len(source), len(target)
-
-	v0, v1 := make([]int, target_len+1), make([]int, target_len+1)
-
-	for i := 0; i <= target_len; i++ {
-		v0[i] = i
+func abs(x int) int {
+	if x < 0 {
+		return -x
 	}
-
-	cost := 0
-	for i := 0; i < source_len; i++ {
-		v1[0] = i + 1
-		for j := 0; j < target_len; j++ {
-			cost = 0
-			if source[i] != target[j] {
-				cost = 1
-			}
-			v1[j+1] = Min3(v1[j]+1, v0[j+1]+1, v0[j]+cost)
-		}
-		v0, v1 = v1, v0
-	}
-
-	return v0[target_len]
+	return x
 }
 
+// DistanceThreshold computes the Levenshtein distance between two strings
+// if and only if it is smaller than a specific threshold
+//
+// Arugments:
+// source, target (string): thw two strings to compute the distance for
+// threshold (int): the threshold of the Levenshtein distance
+//
+// Returns: (int, bool) Levenshtein distance and if it is lower than the
+// threshold. The first value is valid iff the second one is true.
 func DistanceThreshold(source, target string, threshold int) (int, bool) {
-	source_len, target_len := len(source), len(target)
+	sourceLen := len(source)
+	targetLen := len(target)
 
-	if source_len > target_len {
+	if sourceLen > targetLen {
 		source, target = target, source
-		source_len, target_len = target_len, source_len
+		sourceLen, targetLen = targetLen, sourceLen
 	}
 
-	diff := target_len - source_len
+	diff := targetLen - sourceLen
 
-	v0, v1 := make([]int, target_len+1), make([]int, target_len+1)
+	v0, v1 := make([]int, targetLen+1), make([]int, targetLen+1)
 
-	for i := 0; i <= target_len; i++ {
+	for i := 0; i <= targetLen; i++ {
 		v0[i] = i
 	}
 
-	cost, lower := 0, 0 // In the lower variable we will keep the possible lower bound at each step
-	for i := 0; i < source_len; i++ {
-		start, stop := Max(0, i-threshold), Min(target_len, i+diff+threshold)
+	cost, lower := 0, 0 // Lower bound at each step
+	for i := 0; i < sourceLen; i++ {
+		start, stop := max(0, i-threshold), min(targetLen, i+diff+threshold)
 		if start == 0 {
 			v1[start] = i + 1
 		} else {
@@ -85,7 +78,7 @@ func DistanceThreshold(source, target string, threshold int) (int, bool) {
 			if source[i-1] != target[start-1] {
 				cost = 1
 			}
-			v1[start] = Min(v0[start]+1, v0[start-1]+cost)
+			v1[start] = min(v0[start]+1, v0[start-1]+cost)
 		}
 		lower = v1[start]
 		for j := start; j < stop-1; j++ {
@@ -93,15 +86,15 @@ func DistanceThreshold(source, target string, threshold int) (int, bool) {
 			if source[i] != target[j] {
 				cost = 1
 			}
-			v1[j+1] = Min3(v1[j]+1, v0[j+1]+1, v0[j]+cost)
-			lower = Min(v1[j+1], lower)
+			v1[j+1] = min3(v1[j]+1, v0[j+1]+1, v0[j]+cost)
+			lower = min(v1[j+1], lower)
 		}
 		cost = 0
 		if source[i] != target[stop-1] {
 			cost = 1
 		}
-		v1[stop] = Min(v1[stop-1]+1, v0[stop-1]+cost)
-		lower = Min(v1[stop], lower)
+		v1[stop] = min(v1[stop-1]+1, v0[stop-1]+cost)
+		lower = min(v1[stop], lower)
 		// If the lower bound is higher than the threshold we return false
 		if lower > threshold {
 			return -1, false
@@ -109,69 +102,89 @@ func DistanceThreshold(source, target string, threshold int) (int, bool) {
 		v0, v1 = v1, v0
 	}
 
-	return v0[target_len], v0[target_len] <= threshold
+	return v0[targetLen], v0[targetLen] <= threshold
 
 }
 
+// ComputeHistogram calculates the 32bit histogram for a specific string
+//
+// Arugments:
+// s (string): The string for which we want to calculate the histrogram
+//
+// Returns: (uint32) the computed 32bit histogram
 func ComputeHistogram(s string) uint32 {
-	var result uint32 = 0
+	var result uint32
 	for _, c := range s {
-		result ^= (1 << (HistogramMod & uint(c)))
+		result ^= (1 << (histogramMod & uint(c)))
 	}
 	return result
 }
 
-/* This function computes the number of different bits in both histogram
-   and then adds length_diff to that difference then divides that by 2 */
-func LowerBound(histogram_source, histogram_target uint32, length_diff int) int {
-	diff := histogram_target ^ histogram_source
+// LowerBound computes the number of different bits in both histograms
+// and then adds lengthDiff to that difference then divides that by 2
+//
+// Arguments:
+// histogramSource, histogramTarget (uint32): the two histograms
+// lengthDiff (int): the difference of length between the two corresponding
+// strings
+func LowerBound(histogramSource, histogramTarget uint32, lengthDiff int) int {
+	diff := histogramTarget ^ histogramSource
 	diff = diff - ((diff >> 1) & 0x55555555)
-    diff = (diff & 0x33333333) + ((diff >> 2) & 0x33333333)
-    diff = (((diff + (diff >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24
-	return ((int)(diff) + length_diff) >> 1
+	diff = (diff & 0x33333333) + ((diff >> 2) & 0x33333333)
+	diff = (((diff + (diff >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24
+	return ((int)(diff) + lengthDiff) >> 1
 }
 
-/* Here we compute an extended histogram which allows us to have a better filter
-   for fetching a lower bound for the Levenshtein distance. However these functions
-   should only be used as a second filter since they are much slower than the pervious
-   ones and also take up more memory */
+// Here we compute an extended histogram which allows us to have a better filter
+// for fetching a lower bound for the Levenshtein distance. However these functions
+// should only be used as a second filter since they are much slower than the pervious
+// ones and also take up more memory
 
-const BUCKET_BITS = 2
-const BIT_MASK = (1 << BUCKET_BITS) - 1
+const bucketBits = 2
+const bitMask = (1 << bucketBits) - 1
 
+// ComputeExtendedHistogram takes a string and outputs a more refined, 64bit
+// histogram which represents a refined version of the 32bit one
+//
+// Arguments:
+// s (string): the string which we want to compute the histogram for
+//
+// Returns: (uint64) the 64bit computed histogram
 func ComputeExtendedHistogram(s string) uint64 {
-	buckets := make([]uint8, 64/BUCKET_BITS)
-	for i, _ := range buckets {
+	buckets := make([]uint8, 64/bucketBits)
+	for i := range buckets {
 		buckets[i] = 0
 	}
 	for _, c := range s {
 		index := int(c) % len(buckets)
-		if buckets[index] != BIT_MASK {
+		if buckets[index] != bitMask {
 			buckets[index]++
 		}
 	}
-	var result uint64 = 0
+	var result uint64
 	for i, value := range buckets {
-		result += (uint64(value) << uint(i*BUCKET_BITS))
+		result += (uint64(value) << uint(i*bucketBits))
 	}
 	return result
 }
 
-func Abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-func ExtendedLowerBound(histogram_source, histogram_target uint64, length_diff int) int {
-	result := length_diff
-	for i := 0; i < 64/BUCKET_BITS; i++ {
-		source_bucket := int(histogram_source) & BIT_MASK
-		target_bucket := int(histogram_target) & BIT_MASK
-		result += Abs(target_bucket - source_bucket)
-		histogram_source >>= BUCKET_BITS
-		histogram_target >>= BUCKET_BITS
+// ExtendedLowerBound takes two 64bit histograms and the corresponding string
+// length difference and outputs a lower bound for the Levenshtein distance
+//
+// Arugments:
+// histogramSource, histogramTarget (uint64): the two histograms
+// lengthDiff (int): the corresponding string length difference
+//
+// Returns: (int) the lower bound for the Levenshtein distance based on these
+// histograms.
+func ExtendedLowerBound(histogramSource, histogramTarget uint64, lengthDiff int) int {
+	result := lengthDiff
+	for i := 0; i < 64/bucketBits; i++ {
+		sourceBucket := int(histogramSource) & bitMask
+		targetBucket := int(histogramTarget) & bitMask
+		result += abs(targetBucket - sourceBucket)
+		histogramSource >>= bucketBits
+		histogramTarget >>= bucketBits
 	}
 	return result >> 1
 }

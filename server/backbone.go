@@ -5,24 +5,24 @@ import (
 	"sync"
 )
 
-type StoreStatistics struct {
+type storeStatistics struct {
 	Queries map[string]int
 }
 
-type Statistics struct {
-	Stores map[string]StoreStatistics
+type statistics struct {
+	Stores map[string]storeStatistics
 	mutex  *sync.RWMutex
 }
 
-type Server struct {
-	stores      map[string]*fuzzy.FuzzyService
-	stats       map[string]StoreStatistics
-	stats_lock  sync.RWMutex
-	stores_lock sync.RWMutex
+type server struct {
+	stores     map[string]*fuzzy.Service
+	stats      map[string]storeStatistics
+	StatsLock  sync.RWMutex
+	StoresLock sync.RWMutex
 }
 
-var Fuzzy = Server{
-	stores:      make(map[string]*fuzzy.FuzzyService),
-	stats:       make(map[string]StoreStatistics),
-	stats_lock:  sync.RWMutex{},
-	stores_lock: sync.RWMutex{}}
+var fuzzyStore = server{
+	stores:     make(map[string]*fuzzy.Service),
+	stats:      make(map[string]storeStatistics),
+	StatsLock:  sync.RWMutex{},
+	StoresLock: sync.RWMutex{}}

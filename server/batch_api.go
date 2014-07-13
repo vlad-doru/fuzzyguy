@@ -7,15 +7,15 @@ import (
 	"strconv"
 )
 
-func GetKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
-	parameters, valid := RequireParameters([]string{"store", "keys", "distance"}, w, r)
+func getKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
+	parameters, valid := requireParameters([]string{"store", "keys", "distance"}, w, r)
 	if !valid {
 		return
 	}
 
-	store, present := GetStore(parameters["store"])
+	store, present := getStore(parameters["store"])
 	if !present {
-		ParameterError(w, "store")
+		parameterError(w, "store")
 		return
 	}
 
@@ -24,7 +24,7 @@ func GetKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
 
 	distance, err := strconv.Atoi(parameters["distance"])
 	if err != nil {
-		ParameterError(w, "distance (numeric)")
+		parameterError(w, "distance (numeric)")
 		return
 	}
 
@@ -32,7 +32,7 @@ func GetKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
 	var keys []string
 	err = json.Unmarshal([]byte(parameters["keys"]), &keys)
 	if err != nil {
-		ParameterError(w, "keys (JSON)")
+		parameterError(w, "keys (JSON)")
 		return
 	}
 
@@ -46,17 +46,17 @@ func GetKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
 				result[i] = value
 			}
 		}
-		IncrementStats(parameters["store"], "/fuzzy/batch GET")
-		json_response, _ := json.Marshal(result)
+		incrementStats(parameters["store"], "/fuzzy/batch GET")
+		jsonResponse, _ := json.Marshal(result)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(json_response))
+		fmt.Fprintf(w, string(jsonResponse))
 		return
 	}
 
 	/* Approximate matching here */
 	results, err := strconv.Atoi(r.FormValue("results"))
 	if err != nil {
-		ParameterError(w, "results")
+		parameterError(w, "results")
 		return
 	}
 
@@ -67,12 +67,12 @@ func GetKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
 
 	for i, key := range keys {
 		go func(k string, j int) {
-			fuzzy_results := store.Query(k, distance, results)
-			json_response, _ := json.Marshal(fuzzy_results)
+			fuzzyResults := store.Query(k, distance, results)
+			jsonResponse, _ := json.Marshal(fuzzyResults)
 			c <- struct {
 				string
 				int
-			}{string(json_response), j}
+			}{string(jsonResponse), j}
 		}(key, i)
 	}
 
@@ -82,46 +82,47 @@ func GetKeyBatchHandler(w http.ResponseWriter, r *http.Request) {
 		result[i] = key
 	}
 
-	IncrementStats(parameters["store"], "/fuzzy/batch GET")
-	json_response, _ := json.Marshal(result)
+	incrementStats(parameters["store"], "/fuzzy/batch GET")
+	jsonResponse, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, string(json_response))
+	fmt.Fprintf(w, string(jsonResponse))
 }
 
-func AddBatchKeyValueHandler(w http.ResponseWriter, r *http.Request) {
-	parameters, valid := RequireParameters([]string{"store", "dictionary"}, w, r)
+func addBatchKeyValueHandler(w http.ResponseWriter, r *http.Request) {
+	parameters, valid := requireParameters([]string{"store", "dictionary"}, w, r)
 	if !valid {
 		return
 	}
 
-	store, present := GetStore(parameters["store"])
+	store, present := getStore(parameters["store"])
 	if !present {
-		ParameterError(w, "store (existent)")
+		parameterError(w, "store (existent)")
 		return
 	}
 
 	dict := make(map[string]string)
 	err := json.Unmarshal([]byte(parameters["dictionary"]), &dict)
 	if err != nil {
-		ParameterError(w, "dictionary (JSON)")
+		parameterError(w, "dictionary (JSON)")
 		return
 	}
 
 	for key, value := range dict {
 		store.Set(key, value)
 	}
-	IncrementStats(parameters["store"], "/fuzzy/batch PUT")
+	incrementStats(parameters["store"], "/fuzzy/batch PUT")
 	fmt.Fprintf(w, "Successfully set the keys")
 }
 
+// BatchHandler handles all requests regardin the described API to process
+// multiple keys and values at once in order to reduce latency.
 func BatchHandler(w http.ResponseWriter, r *http.Request) {
-
 	switch r.Method {
 	case "GET":
-		GetKeyBatchHandler(w, r)
+		getKeyBatchHandler(w, r)
 		return
 	case "PUT":
-		AddBatchKeyValueHandler(w, r)
+		addBatchKeyValueHandler(w, r)
 		return
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)

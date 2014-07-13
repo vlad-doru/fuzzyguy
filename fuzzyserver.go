@@ -1,9 +1,9 @@
 package main
 
 import (
+	"./server"
 	"encoding/json"
 	"fmt"
-	"./server"
 	"log"
 	"net/http"
 	"os"

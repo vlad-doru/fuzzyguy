@@ -12,18 +12,18 @@ import (
 	"testing"
 )
 
-func TestKeyScoreHeap(t *testing.T) {
-	h := new(KeyScoreHeap)
+func TestkeyScoreHeap(t *testing.T) {
+	h := new(keyScoreHeap)
 	heap.Init(h)
-	heap.Push(h, KeyScore{key: "test", score: 1})
-	heap.Push(h, KeyScore{key: "test", score: 0})
-	heap.Push(h, KeyScore{key: "test", score: 3})
-	heap.Push(h, KeyScore{key: "test", score: 4})
+	heap.Push(h, keyScore{key: "test", score: 1})
+	heap.Push(h, keyScore{key: "test", score: 0})
+	heap.Push(h, keyScore{key: "test", score: 3})
+	heap.Push(h, keyScore{key: "test", score: 4})
 
 	order := []int{4, 3, 1, 0}
 
 	for _, val := range order {
-		popped := heap.Pop(h).(KeyScore)
+		popped := heap.Pop(h).(keyScore)
 		if val != popped.score {
 			t.Log(popped)
 			t.Error("Heap does not work properly")
@@ -32,10 +32,10 @@ func TestKeyScoreHeap(t *testing.T) {
 }
 
 func BenchmarkHeapOperations(b *testing.B) {
-	h := new(KeyScoreHeap)
+	h := new(keyScoreHeap)
 	heap.Init(h)
 	for n := 0; n < b.N; n++ {
-		heap.Push(h, KeyScore{score: 1, key: "test"})
+		heap.Push(h, keyScore{score: 1, key: "test"})
 		if h.Len() > 5 {
 			heap.Pop(h)
 		}
@@ -43,7 +43,7 @@ func BenchmarkHeapOperations(b *testing.B) {
 }
 
 func TestSimpleSetGetDelete(t *testing.T) {
-	service := NewFuzzyService()
+	service := NewService()
 	service.Set("key", "value")
 	value, _ := service.Get("key")
 	if value != "value" {
@@ -87,22 +87,22 @@ func TestSimpleSetGetDelete(t *testing.T) {
 }
 
 func BenchmarkServiceSet(b *testing.B) {
-	service := NewFuzzyService()
+	service := NewService()
 	for n := 0; n < b.N; n++ {
 		service.Set("key", "value")
 	}
 }
 
 func BenchmarkServiceGet(b *testing.B) {
-	service := NewFuzzyService()
+	service := NewService()
 	service.Set("key", "value")
 	for n := 0; n < b.N; n++ {
 		service.Get("key")
 	}
 }
 
-func TestFuzzyService(t *testing.T) {
-	service := NewFuzzyService()
+func TestService(t *testing.T) {
+	service := NewService()
 	service.Set("ana", "super")
 	service.Set("anan", "value")
 	service.Set("super", "ceva")
@@ -126,11 +126,11 @@ func TestFuzzyService(t *testing.T) {
 	}
 }
 
-var test_file string = "../test/data/testset_300000.dat"
+const testFile = "../test/data/testset_300000.dat"
 
-func TestConcurrencyFuzzyService(t *testing.T) {
-	queries, _, service := LoadTestSet(test_file)
-	service = NewFuzzyService()
+func TestConcurrencyService(t *testing.T) {
+	queries, _, service := LoadTestSet(testFile)
+	service = NewService()
 
 	barrier := make(chan bool)
 	steps := 1000
@@ -148,11 +148,11 @@ func TestConcurrencyFuzzyService(t *testing.T) {
 	}
 }
 
-func LoadTestSet(name string) ([]string, []string, *FuzzyService) {
-	service := NewFuzzyService()
+func LoadTestSet(name string) ([]string, []string, *Service) {
+	service := NewService()
 
 	var key string
-	var keys_nr, queries_nr int
+	var keysNr, queriesNr int
 	var queries, correct []string
 
 	fmt.Printf("\n[FILE NAME %s ]\n", name)
@@ -163,21 +163,21 @@ func LoadTestSet(name string) ([]string, []string, *FuzzyService) {
 	reader := bufio.NewReader(file)
 
 	l, _, _ := reader.ReadLine()
-	keys_nr, _ = strconv.Atoi(string(l))
+	keysNr, _ = strconv.Atoi(string(l))
 
-	for i := 0; i < keys_nr; i++ {
+	for i := 0; i < keysNr; i++ {
 		l, _, _ = reader.ReadLine()
 		key = string(l)
 		service.Set(key, "test")
 	}
 
 	l, _, _ = reader.ReadLine()
-	queries_nr, _ = strconv.Atoi(string(l))
+	queriesNr, _ = strconv.Atoi(string(l))
 
-	queries = make([]string, queries_nr)
-	correct = make([]string, queries_nr)
+	queries = make([]string, queriesNr)
+	correct = make([]string, queriesNr)
 
-	for i := 0; i < queries_nr; i++ {
+	for i := 0; i < queriesNr; i++ {
 		l, _, _ = reader.ReadLine()
 		split := strings.Split(string(l), "\t")
 		correct[i], queries[i] = split[0], split[1]
@@ -189,7 +189,7 @@ func BenchmarkParallelServiceQuery(b *testing.B) {
 	b.StopTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	queries, _, service := LoadTestSet(test_file)
+	queries, _, service := LoadTestSet(testFile)
 
 	c := make(chan bool)
 
@@ -211,18 +211,18 @@ func BenchmarkAccuracyServiceQuery(b *testing.B) {
 	b.StopTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	queries, correct, service := LoadTestSet(test_file)
+	queries, correct, service := LoadTestSet(testFile)
 
-	var accuracy float32 = 0
+	var accuracy float32
 	c := make(chan float32)
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		accuracy = 0
-		for qindex, _ := range queries {
+		for qindex := range queries {
 			go func(j int) {
 				result := service.Query(queries[j], 3, 5)
-				var precision float32 = 0
+				var precision float32
 				for rindex, res := range result {
 					if res == correct[j] {
 						precision = float32(rindex+1) / float32(len(result))
@@ -244,12 +244,12 @@ func BenchmarkSequentialServiceQuery(b *testing.B) {
 	b.StopTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	queries, correct, service := LoadTestSet(test_file)
-	var accuracy float32 = 0
+	queries, correct, service := LoadTestSet(testFile)
+	var accuracy float32
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		for qindex, _ := range queries {
+		for qindex := range queries {
 			result := service.Query(queries[qindex], 3, 5)
 			b.StopTimer()
 			for rindex, res := range result {

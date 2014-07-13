@@ -1,22 +1,22 @@
 package server
 
 import (
+	"../fuzzy"
 	"encoding/json"
 	"fmt"
-	"../fuzzy"
 	"net/http"
 	"strconv"
 )
 
-func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
-	parameters, valid := RequireParameters([]string{"store", "key", "distance"}, w, r)
+func getKeyHandler(w http.ResponseWriter, r *http.Request) {
+	parameters, valid := requireParameters([]string{"store", "key", "distance"}, w, r)
 	if !valid {
 		return
 	}
 
-	store, present := GetStore(parameters["store"])
+	store, present := getStore(parameters["store"])
 	if !present {
-		ParameterError(w, "store")
+		parameterError(w, "store")
 		return
 	}
 
@@ -25,7 +25,7 @@ func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	distance, err := strconv.Atoi(parameters["distance"])
 	if err != nil {
-		ParameterError(w, "distance (numeric)")
+		parameterError(w, "distance (numeric)")
 		return
 	}
 
@@ -33,10 +33,10 @@ func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
 	if distance == 0 {
 		value, present := store.Get(parameters["key"])
 		if !present {
-			ParameterError(w, "key (Existent)")
+			parameterError(w, "key (Existent)")
 			return
 		}
-		IncrementStats(parameters["store"], "/fuzzy GET")
+		incrementStats(parameters["store"], "/fuzzy GET")
 		fmt.Fprintf(w, value)
 		return
 	}
@@ -44,84 +44,83 @@ func GetKeyHandler(w http.ResponseWriter, r *http.Request) {
 	/* Approximate matching here */
 	results, err := strconv.Atoi(r.FormValue("results"))
 	if err != nil {
-		ParameterError(w, "results")
+		parameterError(w, "results")
 		return
 	}
-	fuzzy_results := store.Query(parameters["key"], distance, results)
-	json_response, _ := json.Marshal(fuzzy_results)
-	IncrementStats(parameters["store"], "/fuzzy GET")
+	fuzzyResults := store.Query(parameters["key"], distance, results)
+	jsonResponse, _ := json.Marshal(fuzzyResults)
+	incrementStats(parameters["store"], "/fuzzy GET")
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, string(json_response))
+	fmt.Fprintf(w, string(jsonResponse))
 
 }
 
-func NewStoreHandler(w http.ResponseWriter, r *http.Request) {
-	parameters, valid := RequireParameters([]string{"store"}, w, r)
+func newStoreHandler(w http.ResponseWriter, r *http.Request) {
+	parameters, valid := requireParameters([]string{"store"}, w, r)
 	if !valid {
 		return
 	}
 
-	_, present := GetStore(parameters["store"])
+	_, present := getStore(parameters["store"])
 	if present {
 		http.Error(w, "This store already exists", http.StatusBadRequest)
 		return
 	}
 
-	Fuzzy.stores[parameters["store"]] = fuzzy.NewFuzzyService()
+	fuzzyStore.stores[parameters["store"]] = fuzzy.NewService()
 
-	Fuzzy.stats_lock.Lock()
-	Fuzzy.stats[parameters["store"]] = StoreStatistics{make(map[string]int)}
-	Fuzzy.stats_lock.Unlock()
-	IncrementStats(parameters["store"], "/fuzzy POST")
+	fuzzyStore.StatsLock.Lock()
+	fuzzyStore.stats[parameters["store"]] = storeStatistics{make(map[string]int)}
+	fuzzyStore.StatsLock.Unlock()
+	incrementStats(parameters["store"], "/fuzzy POST")
 
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Store has successfully been created")
 
 }
 
-func AddKeyValueHandler(w http.ResponseWriter, r *http.Request) {
-	parameters, valid := RequireParameters([]string{"store", "key", "value"}, w, r)
+func addKeyValueHandler(w http.ResponseWriter, r *http.Request) {
+	parameters, valid := requireParameters([]string{"store", "key", "value"}, w, r)
 	if !valid {
 		return
 	}
 
-	store, present := GetStore(parameters["store"])
+	store, present := getStore(parameters["store"])
 	if !present {
-		ParameterError(w, "store (existent)")
+		parameterError(w, "store (existent)")
 		return
 	}
 
-	Fuzzy.stores_lock.Lock()
+	fuzzyStore.StoresLock.Lock()
 	store.Set(parameters["key"], parameters["value"])
-	Fuzzy.stores_lock.Unlock()
+	fuzzyStore.StoresLock.Unlock()
 
 	fmt.Fprintf(w, "Successfully set the key")
-	IncrementStats(parameters["store"], "/fuzzy PUT")
+	incrementStats(parameters["store"], "/fuzzy PUT")
 }
 
-func DeleteKeyHandler(w http.ResponseWriter, r *http.Request) {
-	parameters, valid := RequireParameters([]string{"store"}, w, r)
+func deleteKeyHandler(w http.ResponseWriter, r *http.Request) {
+	parameters, valid := requireParameters([]string{"store"}, w, r)
 	if !valid {
 		return
 	}
 
-
-	store, present := GetStore(parameters["store"])
+	store, present := getStore(parameters["store"])
 	if !present {
-		ParameterError(w, "store (existent)")
+		parameterError(w, "store (existent)")
 		return
 	}
 	/* If there is no key parameter delete the entire collection */
 	key := r.FormValue("key")
 	if len(key) == 0 {
 
-		Fuzzy.stores_lock.Lock()
-		delete(Fuzzy.stores, parameters["store"])
-		Fuzzy.stores_lock.Unlock()
+		fuzzyStore.StoresLock.Lock()
+		delete(fuzzyStore.stores, parameters["store"])
+		fuzzyStore.StoresLock.Unlock()
 
-		Fuzzy.stats_lock.Lock()
-		delete(Fuzzy.stats, parameters["store"])
-		Fuzzy.stats_lock.Unlock()
+		fuzzyStore.StatsLock.Lock()
+		delete(fuzzyStore.stats, parameters["store"])
+		fuzzyStore.StatsLock.Unlock()
 
 		return
 	}
@@ -129,26 +128,27 @@ func DeleteKeyHandler(w http.ResponseWriter, r *http.Request) {
 	deleted := store.Delete(parameters["key"])
 	if deleted {
 		fmt.Fprintf(w, "Successfully deleted the key")
-		IncrementStats(parameters["store"], "/fuzzy DELETE")
+		incrementStats(parameters["store"], "/fuzzy DELETE")
 	} else {
 		http.Error(w, "The key you deleted does not exist", http.StatusBadRequest)
 	}
 }
 
+// FuzzyHandler handles all requests which operate on a single key or value.
+// It follows the API described in the project's wiki.
 func FuzzyHandler(w http.ResponseWriter, r *http.Request) {
-
 	switch r.Method {
 	case "GET":
-		GetKeyHandler(w, r)
+		getKeyHandler(w, r)
 		return
 	case "PUT":
-		AddKeyValueHandler(w, r)
+		addKeyValueHandler(w, r)
 		return
 	case "DELETE":
-		DeleteKeyHandler(w, r)
+		deleteKeyHandler(w, r)
 		return
 	case "POST":
-		NewStoreHandler(w, r)
+		newStoreHandler(w, r)
 		return
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)

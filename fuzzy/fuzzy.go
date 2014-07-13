@@ -1,44 +1,73 @@
+// Package fuzzy defines the necessary tools to manipulate data
+//
+// Exported types:
+// Service -> data structure to encapsulate all information
+//
+// Exported functions:
+// NewService -> constructor function.
+// Get, Set, Len, Query -> methods for the Service type.
 package fuzzy
 
 import (
-	"container/heap"
 	"../levenshtein"
+	"container/heap"
 	"sort"
 	"sync"
 )
 
-type Service interface {
+type service interface {
 	Set(key, value string)
 	Get(key string) (string, bool)
-	Query(key string, distance, max_results int) []string
+	Query(key string, distance, maxResults int) []string
 	Len() int
 }
 
-type Storage struct {
+type storage struct {
 	key      string
 	value    string
 	extended uint64
 }
 
-type FuzzyService struct {
-	dictionary map[int]map[uint32][]Storage
+// Service is a type which holds the underlying data structures used
+// to implement the fuzzy service.
+//
+// Attributes:
+// dictionary (map[int]map[uint32][]storage): Maps each storage type
+// (which encapsulates necessary data) to its corresponding 32bit histogram
+// and the length of the key indexed
+//
+// rwmutex (*sync.RWMutex): Read-write mutex used to synchronize operations on
+// the dictionary without having data races
+type Service struct {
+	dictionary map[int]map[uint32][]storage
 	rwmutex    *sync.RWMutex
 }
 
-func NewFuzzyService() *FuzzyService {
-	dict := make(map[int]map[uint32][]Storage)
+// NewService is a constructor function for a Service object.
+//
+// Arugments: None
+//
+// Returns: (*Service) a pointer to an object which can then be used
+// to manipulate data through the Set/Get/Query operations.
+func NewService() *Service {
+	dict := make(map[int]map[uint32][]storage)
 	mutex := &sync.RWMutex{}
-	return &FuzzyService{dict, mutex}
+	return &Service{dict, mutex}
 }
 
-func (service FuzzyService) Set(key, value string) {
+// Set a value to be indexed by a specific key in the system
+//
+// Arguments:
+// key (string): the key to index the specific value
+// value (string): the value to be indexed by the specified key
+func (service Service) Set(key, value string) {
 	histogram := levenshtein.ComputeHistogram(key)
-	storage := Storage{key, value, levenshtein.ComputeExtendedHistogram(key)}
+	storeValue := storage{key, value, levenshtein.ComputeExtendedHistogram(key)}
 	service.rwmutex.Lock()
 	bucket, present := service.dictionary[len(key)]
 	if present {
-		list, histogram_present := bucket[histogram]
-		if histogram_present {
+		list, histogramPresent := bucket[histogram]
+		if histogramPresent {
 			for i, pair := range list {
 				if pair.key == key {
 					list[i].value = value
@@ -46,24 +75,31 @@ func (service FuzzyService) Set(key, value string) {
 					return
 				}
 			}
-			bucket[histogram] = append(bucket[histogram], storage)
+			bucket[histogram] = append(bucket[histogram], storeValue)
 		} else {
-			bucket[histogram] = []Storage{storage}
+			bucket[histogram] = []storage{storeValue}
 		}
 	} else {
-		bucket = map[uint32][]Storage{histogram: []Storage{storage}}
+		bucket = map[uint32][]storage{histogram: {storeValue}}
 		service.dictionary[len(key)] = bucket
 	}
 	service.rwmutex.Unlock()
 }
 
-func (service FuzzyService) Delete(key string) bool {
+// Delete a key from the system.
+//
+// Arguments:
+// key (string): the key to be deleted from the system along with the values
+// 	which it indexes.
+//
+// Returns: (bool) wether the deletion was susccesful or not
+func (service Service) Delete(key string) bool {
 	histogram := levenshtein.ComputeHistogram(key)
 	service.rwmutex.Lock()
 	bucket, present := service.dictionary[len(key)]
 	if present {
-		list, histogram_present := bucket[histogram]
-		if histogram_present {
+		list, histogramPresent := bucket[histogram]
+		if histogramPresent {
 			for index, pair := range list {
 				if pair.key == key {
 					list[index], list = list[len(list)-1], list[:len(list)-1]
@@ -86,13 +122,20 @@ func (service FuzzyService) Delete(key string) bool {
 	return false
 }
 
-func (service FuzzyService) Get(key string) (string, bool) {
+// Get the value associated with a specific key
+//
+// Arguments:
+// key (string): the key whose value which we want to return
+//
+// Returns: (string, bool) tuple which represents (value, present). If present
+// is false then the value we return is the empty string ""
+func (service Service) Get(key string) (string, bool) {
 	histogram := levenshtein.ComputeHistogram(key)
 	service.rwmutex.RLock()
 	bucket, present := service.dictionary[len(key)]
 	if present {
-		list, histogram_present := bucket[histogram]
-		if histogram_present {
+		list, histogramPresent := bucket[histogram]
+		if histogramPresent {
 			for _, pair := range list {
 				if pair.key == key {
 					service.rwmutex.RUnlock()
@@ -105,7 +148,10 @@ func (service FuzzyService) Get(key string) (string, bool) {
 	return "", false
 }
 
-func (service FuzzyService) Len() int {
+// Len returns the number of keys indexed by the system
+//
+// Returns: (int) the total number of keys indexed by the system
+func (service Service) Len() int {
 	result := 0
 	service.rwmutex.RLock()
 	for _, dict := range service.dictionary {
@@ -115,29 +161,29 @@ func (service FuzzyService) Len() int {
 	return result
 }
 
-type KeyScore struct {
+// TODO: Move the keyScore, keyScoreHeap implementation to a different file
+type keyScore struct {
 	prefix int
 	score  int
 	key    string
 }
 
-type KeyScoreHeap []KeyScore
+type keyScoreHeap []keyScore
 
-// We are going to implement a KeyScore max-heap based on the score
-func (h KeyScoreHeap) Len() int {
+func (h keyScoreHeap) Len() int {
 	return len(h)
 }
 
-func Min(x, y int) int {
+func min(x, y int) int {
 	if x < y {
 		return x
 	}
 	return y
 }
 
-func Prefix(source, target string) int {
+func prefix(source, target string) int {
 	prefix := 0
-	for i := 0; i < Min(len(source), len(target)); i++ {
+	for i := 0; i < min(len(source), len(target)); i++ {
 		if source[i] == target[i] {
 			prefix++
 		} else {
@@ -147,7 +193,9 @@ func Prefix(source, target string) int {
 	return prefix
 }
 
-func (h KeyScoreHeap) Less(i, j int) bool {
+// We implement the heap methods here: Less, Swap, Push, Pop
+
+func (h keyScoreHeap) Less(i, j int) bool {
 	if h[i].prefix != h[j].prefix {
 		return h[i].prefix < h[j].prefix
 	}
@@ -157,15 +205,15 @@ func (h KeyScoreHeap) Less(i, j int) bool {
 	return h[i].key > h[j].key // this is the max-heap condition
 }
 
-func (h KeyScoreHeap) Swap(i, j int) {
+func (h keyScoreHeap) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 }
 
-func (h *KeyScoreHeap) Push(x interface{}) {
-	*h = append(*h, x.(KeyScore))
+func (h *keyScoreHeap) Push(x interface{}) {
+	*h = append(*h, x.(keyScore))
 }
 
-func (h *KeyScoreHeap) Pop() interface{} {
+func (h *keyScoreHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
 	x := old[n-1]
@@ -173,59 +221,66 @@ func (h *KeyScoreHeap) Pop() interface{} {
 	return x
 }
 
-func Abs(x int) int {
+func abs(x int) int {
 	if x < 0 {
 		return -x
 	}
 	return x
 }
 
-func (service FuzzyService) Query(query string, threshold, max_results int) []string {
-	h := new(KeyScoreHeap)
+// Query the service for keys which can have a Levenshtein distance smaller
+// than a threshold for a spefici key. Take only the first x result
+//
+// Arugments:
+// query (string): the base key
+// threshold (int): how far can a candidate be in the Levenshtein metric space
+// maxResults (int): the maximum number of results which will be returned
+func (service Service) Query(query string, threshold, maxResults int) []string {
+	h := new(keyScoreHeap)
 	heap.Init(h)
-	query_histogram := levenshtein.ComputeHistogram(query)
-	query_extended := levenshtein.ComputeExtendedHistogram(query)
-	query_len := len(query)
-	heap_mutex := &sync.Mutex{}
-	sync_channel := make(chan int)
-	start := query_len - threshold
-	stop := query_len + threshold + 1
+	queryHistogram := levenshtein.ComputeHistogram(query)
+	queryExtended := levenshtein.ComputeExtendedHistogram(query)
+	queryLen := len(query)
+	heapMutex := &sync.Mutex{}
+	syncChannel := make(chan int)
+	start := queryLen - threshold
+	stop := queryLen + threshold + 1
 
 	service.rwmutex.RLock()
 	for i := start; i < stop; i++ {
 		go func(index int, mutex *sync.Mutex) {
-			diff := Abs(index - query_len)
+			diff := abs(index - queryLen)
 			for histogram, list := range service.dictionary[index] {
-				if levenshtein.LowerBound(query_histogram, histogram, diff) > threshold {
+				if levenshtein.LowerBound(queryHistogram, histogram, diff) > threshold {
 					continue
 				}
 				for _, pair := range list {
-					if levenshtein.ExtendedLowerBound(query_extended, pair.extended, diff) > threshold {
+					if levenshtein.ExtendedLowerBound(queryExtended, pair.extended, diff) > threshold {
 						continue
 					}
 					distance, within := levenshtein.DistanceThreshold(query, pair.key, threshold)
 					if within {
 						mutex.Lock()
-						heap.Push(h, KeyScore{Prefix(pair.key, query), distance, pair.key})
-						if h.Len() > max_results {
+						heap.Push(h, keyScore{prefix(pair.key, query), distance, pair.key})
+						if h.Len() > maxResults {
 							heap.Pop(h)
 						}
 						mutex.Unlock()
 					}
 				}
 			}
-			sync_channel <- 1
-		}(i, heap_mutex)
+			syncChannel <- 1
+		}(i, heapMutex)
 	}
 	for i := start; i < stop; i++ {
-		<-sync_channel
+		<-syncChannel
 	}
 	service.rwmutex.RUnlock()
 
 	sort.Sort(h)
 	results := make([]string, h.Len())
 	for i := 0; i < len(results); i++ {
-		results[i] = h.Pop().(KeyScore).key
+		results[i] = h.Pop().(keyScore).key
 	}
 	return results
 }

@@ -4,53 +4,6 @@ import (
 	"testing"
 )
 
-func TestNewMatrix(t *testing.T) {
-	m := NewMatrix(3, 4)
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 4; j++ {
-			if m[i][j] != 0 {
-				t.Error("Matrix was not initialized as it was supposed to")
-			}
-		}
-	}
-}
-
-func TestLevenshtein(t *testing.T) {
-	var testCases = []struct {
-		source   string
-		target   string
-		distance int
-	}{
-		{"", "a", 1},
-		{"a", "aa", 1},
-		{"a", "aaa", 2},
-		{"", "", 0},
-		{"a", "b", 1},
-		{"aaa", "aba", 1},
-		{"aaa", "ab", 2},
-		{"a", "a", 0},
-		{"ab", "ab", 0},
-		{"ab", "", 2},
-		{"aa", "a", 1},
-		{"aaa", "a", 2},
-		{"informatica", "fmi unibuc", 10},
-	}
-	for _, testCase := range testCases {
-		distance := Distance(testCase.source, testCase.target)
-		if distance != testCase.distance {
-			t.Log("Distance between",
-				testCase.source,
-				"and",
-				testCase.target,
-				"computed as",
-				distance,
-				", should be",
-				testCase.distance)
-			t.Error("Failed to compute proper Levenshtein Distance")
-		}
-	}
-}
-
 func TestDistanceThreshold(t *testing.T) {
 	threshold := 2
 	var testCases = []struct {
@@ -102,14 +55,6 @@ func TestDistanceThreshold(t *testing.T) {
 	}
 }
 
-func BenchmarkLevenshtein(b *testing.B) {
-	source := "informatcia supre"
-	target := "informatica super"
-	for n := 0; n < b.N; n++ {
-		Distance(source, target)
-	}
-}
-
 func BenchmarkLevenshteinThreshold(b *testing.B) {
 	source := "informatcia supre"
 	target := "informatica super"
@@ -133,13 +78,13 @@ func TestHistogram(t *testing.T) {
 		for _, c := range s {
 			aux[c%32]++
 		}
-		var true_value uint32 = 0
+		var trueValue uint32
 		for i := 0; i < 32; i++ {
 			if aux[i]%2 == 1 {
-				true_value |= (1 << uint(i))
+				trueValue |= (1 << uint(i))
 			}
 		}
-		if true_value != ComputeHistogram(s) {
+		if trueValue != ComputeHistogram(s) {
 			t.Log("Bad histogram for ", s)
 			t.Error("Didn't compute the histogram properly")
 		}
@@ -155,19 +100,19 @@ func BenchmarkHistogram(b *testing.B) {
 func TestExtendedHistogram(t *testing.T) {
 	var testCases = []string{"ana", "are", "incredibil", "inexplicabil", "extraveral"}
 	for _, s := range testCases {
-		aux := make([]int, 64/BUCKET_BITS)
+		aux := make([]int, 64/bucketBits)
 		for _, c := range s {
 			aux[int(c)%(len(aux))]++
 		}
 		histogram := ComputeExtendedHistogram(s)
-		bit_mask := uint64(1<<BUCKET_BITS) - 1
-		for i := 0; i < 64/BUCKET_BITS; i++ {
-			if aux[i] != int(histogram&bit_mask) {
+		bitMask := uint64(1<<bucketBits) - 1
+		for i := 0; i < 64/bucketBits; i++ {
+			if aux[i] != int(histogram&bitMask) {
 				t.Log("Bad histogram for ", s)
 				t.Error("Didn't compute the histogram properly")
 				break
 			}
-			histogram >>= BUCKET_BITS
+			histogram >>= bucketBits
 		}
 	}
 }
@@ -214,8 +159,8 @@ func TestExtendedLowerBound(t *testing.T) {
 		distance int
 	}{
 		{1, 0, 1},
-		{(2 << BUCKET_BITS) + 3, (1 << (BUCKET_BITS * 2)) + 1, 3},
-		{(1 << BUCKET_BITS) + 3, (2 << (BUCKET_BITS * 2)) + 2, 2},
+		{(2 << bucketBits) + 3, (1 << (bucketBits * 2)) + 1, 3},
+		{(1 << bucketBits) + 3, (2 << (bucketBits * 2)) + 2, 2},
 	}
 	for _, testCase := range testCases {
 		distance := ExtendedLowerBound(testCase.source, testCase.target, 1)
